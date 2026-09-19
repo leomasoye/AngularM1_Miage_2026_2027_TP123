@@ -1,1 +1,52 @@
-:host { display: block; max-width: 700px; margin: 0 auto; }
+:host {
+  display: block;
+}
+
+.profile-card {
+  max-width: 550px;
+  margin: 2rem auto;
+  padding: 2rem;
+}
+
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e1ebe7;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.profile-header h1 {
+  margin: 0;
+  color: #123d32;
+  font-size: 1.6rem;
+}
+
+.user-info-box {
+  background: #f8faf9;
+  border: 1px solid #e1ebe7;
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.5rem;
+}
+
+.user-info-box p {
+  margin: 0.4rem 0;
+}
+
+.profile-form {
+  margin-bottom: 2rem;
+}
+
+.logout-section {
+  border-top: 1px solid #e1ebe7;
+  padding-top: 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.loading {
+  font-style: italic;
+  color: #61756f;
+}

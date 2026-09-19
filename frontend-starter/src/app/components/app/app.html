@@ -1,15 +1,23 @@
 <header>
-  <div>
-    <b>Guitar Practice Cloud</b>
+  <div class="brand">
+    <a routerLink="/" class="brand-title">Guitar Practice Cloud</a>
     <small>Le cloud qui manque à votre ampli</small>
   </div>
   <nav aria-label="Navigation principale">
-    <a routerLink="/tracks">Backing tracks</a>
-    <a routerLink="/profile">Profil</a>
-    <a routerLink="/login">Connexion</a>
+    @if (auth.isLoggedIn()) {
+      <a routerLink="/tracks" routerLinkActive="active">Backing tracks</a>
+      <a routerLink="/profile" routerLinkActive="active">
+        Profil @if (auth.currentUser(); as user) { ({{ user.name }}) }
+      </a>
+      <button type="button" class="btn-nav-logout" (click)="logout()">Déconnexion</button>
+    } @else {
+      <a routerLink="/login" routerLinkActive="active">Connexion</a>
+      <a routerLink="/register" routerLinkActive="active">Créer un compte</a>
+    }
   </nav>
 </header>
 
 <main>
   <router-outlet />
 </main>
+

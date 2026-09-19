@@ -26,7 +26,15 @@ button:disabled { opacity: 0.45; }
 .track small { display: block; color: #61756f; }
 .pager { margin: 1rem 0; }
 audio { width: 100%; }
-.error { color: #a33; }
+.error { color: #c62828; font-weight: 500; }
+.field-error { color: #c62828; font-size: 0.82rem; margin-top: -0.2rem; display: block; }
+input.invalid { border-color: #c62828; background-color: #fffbfb; }
+.warning-banner { background: #fff3cd; color: #856404; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid #ffeeba; margin: 0.8rem 0; font-size: 0.9rem; }
+.success-message { background: #d4edda; color: #155724; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid #c3e6cb; margin: 0.8rem 0; font-size: 0.9rem; }
+.btn-danger { background: #c62828 !important; }
+.btn-danger:hover { background: #b71c1c !important; }
+.btn-secondary { background: #e0ece7 !important; color: #123d32 !important; }
+.btn-secondary:hover { background: #cfded8 !important; }
 
 @media (max-width: 720px) {
   header, .grid { display: block; }

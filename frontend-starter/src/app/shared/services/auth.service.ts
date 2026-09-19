@@ -1,4 +1,4 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs';
 import { AuthResponse } from '../models/auth-response.model';
@@ -11,6 +11,7 @@ export class AuthService {
 
   readonly currentUser = signal<User | null>(null);
   readonly token = signal<string | null>(localStorage.getItem('gpc_token'));
+  readonly isLoggedIn = computed(() => !!this.token());
 
   login(email: string, password: string) {
     return this.http
