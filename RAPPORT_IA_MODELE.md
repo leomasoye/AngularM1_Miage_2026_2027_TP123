@@ -20,6 +20,10 @@ J'ai redigé un fichier word avec les informations obtenue, pour avoir des notes
 ## Mission 1 :
 
 prompt 1 : Je dois faire cette mission 1, propose moi des solution et un plan d'implémentation en m'expliquant ce qui dois être fait et les choix possibles. Voici la consigne : (ici énoncé mission 1)
-L'argent me fourni une explication de ce qu'il faut faire, avec mes options disponibles, avec un Implémentation Plan complet.
+
+L'argent me fourni une explication de ce qu'il faut faire, avec mes options disponibles, avec un Implémentation Plan complet, des verifications a faire.
+
+Je choisis les options, celles recomandées par l'agent, et il code étape par étape. Voici une capture d'écran attestant les vérifications : ![alt text](image.png)
 
 # TP2
+
