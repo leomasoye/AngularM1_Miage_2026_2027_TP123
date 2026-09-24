@@ -14,7 +14,10 @@ export class TracksPageComponent {
   readonly tracks = signal<Track[]>([]);
   readonly page = signal(1);
   readonly pages = signal(1);
+  readonly total = signal(0);
+  readonly limit = signal(5);
   readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
   readonly audioUrl = signal('');
   readonly title = new FormControl('', { nonNullable: true });
   file?: File;
@@ -30,22 +33,32 @@ export class TracksPageComponent {
 
   load(): void {
     this.loading.set(true);
-    this.service.list(this.page()).subscribe({
+    this.error.set(null);
+    this.service.list(this.page(), this.limit()).subscribe({
       next: (response) => {
         console.debug('[TracksPage] Pistes chargées', response.items.length);
         this.tracks.set(response.items);
         this.pages.set(response.pages);
+        this.total.set(response.total);
         this.loading.set(false);
       },
       error: (error) => {
         console.error('[TracksPage] Chargement impossible', error);
+        this.error.set(error?.error?.message || 'Impossible de charger la bibliothèque audio.');
         this.loading.set(false);
       },
     });
   }
 
   go(page: number): void {
+    if (page < 1 || (this.pages() > 0 && page > this.pages())) return;
     this.page.set(page);
+    this.load();
+  }
+
+  changeLimit(newLimit: number): void {
+    this.limit.set(newLimit);
+    this.page.set(1);
     this.load();
   }
 

@@ -16,29 +16,55 @@
     <article class="card">
       <div class="row">
         <h2>Mes pistes</h2>
-        <button type="button" (click)="load()">Actualiser</button>
+        <button type="button" (click)="load()" [disabled]="loading()">Actualiser</button>
       </div>
-      @if (loading()) {
-        <p>Chargement…</p>
+
+      @if (error()) {
+        <div class="alert-error" role="alert">
+          <span>{{ error() }}</span>
+          <button type="button" class="btn-retry" (click)="load()">Réessayer</button>
+        </div>
       }
+
+      @if (loading()) {
+        <p class="loading-state">Chargement des pistes…</p>
+      }
+
       @for (track of tracks(); track track.id) {
         <div class="track">
-          <div>
+          <div class="track-info">
             <b>{{ track.title }}</b>
-            <small>{{ track.originalName }} · {{ track.size }} Ko</small>
+            <small>{{ track.originalName }} · {{ (track.size / 1024).toFixed(1) }} Ko</small>
           </div>
-          <button type="button" (click)="play(track)" [attr.aria-label]="'Lire ' + track.title">▶</button>
+          <button type="button" class="btn-play" (click)="play(track)" [attr.aria-label]="'Lire ' + track.title">▶</button>
         </div>
       } @empty {
-        <p>Aucune piste.</p>
+        @if (!loading() && !error()) {
+          <p class="empty-state">Aucune piste dans votre bibliothèque.</p>
+        }
       }
+
       <div class="pager">
-        <button type="button" (click)="go(page() - 1)" [disabled]="page() === 1">Préc.</button>
-        <span>Page {{ page() }} / {{ pages() }}</span>
-        <button type="button" (click)="go(page() + 1)" [disabled]="page() === pages()">Suiv.</button>
+        <button type="button" (click)="go(page() - 1)" [disabled]="page() <= 1 || loading()">Préc.</button>
+        <span class="pager-info">Page {{ page() }} / {{ pages() }} @if (total() > 0) { ({{ total() }} piste{{ total() > 1 ? 's' : '' }}) }</span>
+        <button type="button" (click)="go(page() + 1)" [disabled]="page() >= pages() || loading()">Suiv.</button>
       </div>
+
+      <div class="page-options">
+        <label>
+          Pistes par page :
+          <select [value]="limit()" (change)="changeLimit(+($any($event.target).value))">
+            <option [value]="5">5</option>
+            <option [value]="10">10</option>
+            <option [value]="20">20</option>
+          </select>
+        </label>
+      </div>
+
       @if (audioUrl()) {
-        <audio [src]="audioUrl()" controls autoplay></audio>
+        <div class="player">
+          <audio [src]="audioUrl()" controls autoplay></audio>
+        </div>
       }
     </article>
   </div>
