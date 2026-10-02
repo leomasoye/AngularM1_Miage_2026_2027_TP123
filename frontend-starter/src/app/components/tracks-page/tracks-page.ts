@@ -6,6 +6,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { HttpEventType } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Track } from '../../shared/models/track.model';
@@ -42,8 +43,13 @@ export class TracksPageComponent implements OnDestroy {
 
   // Signaux pour l'upload (Mission 3)
   readonly uploading = signal(false);
+  readonly uploadProgress = signal<number | null>(null);
   readonly uploadError = signal<string | null>(null);
   readonly uploadSuccess = signal<string | null>(null);
+
+  // Signaux pour la suppression et le snackbar
+  readonly deletingTrackId = signal<string | null>(null);
+  readonly snackBarMessage = signal<{text: string, type: 'success' | 'error'} | null>(null);
 
   // Signaux pour le lecteur audio (Mission 3)
   readonly audioUrl = signal('');
@@ -154,41 +160,87 @@ export class TracksPageComponent implements OnDestroy {
     }
 
     this.uploading.set(true);
+    this.uploadProgress.set(0);
     this.uploadError.set(null);
     this.uploadSuccess.set(null);
 
     const trackTitle = this.title.value.trim() || this.file.name;
 
     this.service.upload(this.file, trackTitle).subscribe({
-      next: (track) => {
-        console.debug('[TracksPage] Piste envoyée avec succès', track.id);
-        this.uploading.set(false);
-        this.uploadSuccess.set(`Piste "${track.title}" importée avec succès !`);
+      next: (event) => {
+        if (event.type === HttpEventType.UploadProgress && event.total) {
+          const percentDone = Math.round(100 * event.loaded / event.total);
+          this.uploadProgress.set(percentDone);
+        } else if (event.type === HttpEventType.Response) {
+          const track = event.body!;
+          console.debug('[TracksPage] Piste envoyée avec succès', track.id);
+          this.uploading.set(false);
+          this.uploadProgress.set(null);
+          this.uploadSuccess.set(`Piste "${track.title}" importée avec succès !`);
 
-        // Effacer le message de succès après 5 secondes
-        setTimeout(() => this.uploadSuccess.set(null), 5000);
+          // Effacer le message de succès après 5 secondes
+          setTimeout(() => this.uploadSuccess.set(null), 5000);
 
-        // Réinitialiser le formulaire
-        this.title.setValue('');
-        this.file = undefined;
-        const input = this.fileInputRef()?.nativeElement;
-        if (input) {
-          input.value = '';
+          // Réinitialiser le formulaire
+          this.title.setValue('');
+          this.file = undefined;
+          const input = this.fileInputRef()?.nativeElement;
+          if (input) {
+            input.value = '';
+          }
+
+          // Recharger la première page pour voir le nouveau morceau en haut
+          this.page.set(1);
+          this.load();
         }
-
-        // Recharger la première page pour voir le nouveau morceau en haut
-        this.page.set(1);
-        this.load();
       },
       error: (error) => {
         console.error('[TracksPage] Envoi impossible', error);
         this.uploading.set(false);
+        this.uploadProgress.set(null);
         const message =
           error?.error?.message ||
           'Une erreur est survenue lors de l\'envoi du fichier audio.';
         this.uploadError.set(message);
       },
     });
+  }
+
+  deleteTrack(track: Track): void {
+    if (!window.confirm(`Êtes-vous sûr de vouloir supprimer la piste "${track.title}" ?`)) return;
+
+    this.deletingTrackId.set(track.id);
+    this.service.delete(track.id).subscribe({
+      next: () => {
+        this.deletingTrackId.set(null);
+        this.showSnackBar(`Piste "${track.title}" supprimée avec succès.`, 'success');
+
+        if (this.playingTrack()?.id === track.id) {
+          this.stop();
+        }
+
+        // Check if we need to go to previous page (if it was the last element on the current page)
+        if (this.tracks().length === 1 && this.page() > 1) {
+          this.page.set(this.page() - 1);
+        }
+        
+        this.load();
+      },
+      error: (error) => {
+        this.deletingTrackId.set(null);
+        const message = error?.error?.message || 'Erreur lors de la suppression de la piste.';
+        this.showSnackBar(message, 'error');
+        
+        if (error.status === 404 || error.status === 403) {
+          this.load();
+        }
+      }
+    });
+  }
+
+  private showSnackBar(text: string, type: 'success' | 'error'): void {
+    this.snackBarMessage.set({ text, type });
+    setTimeout(() => this.snackBarMessage.set(null), 4000);
   }
 
   play(track: Track): void {

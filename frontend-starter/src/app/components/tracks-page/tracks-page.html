@@ -47,6 +47,15 @@
         </div>
       }
 
+      @if (uploading() && uploadProgress() !== null) {
+        <div class="upload-progress-wrapper">
+          <div class="upload-progress-text">Envoi en cours... <strong>{{ uploadProgress() }}%</strong></div>
+          <div class="progress-container">
+            <div class="progress-bar" [style.width.%]="uploadProgress()"></div>
+          </div>
+        </div>
+      }
+
       <button
         type="button"
         class="btn-primary"
@@ -122,7 +131,7 @@
                 type="button"
                 class="btn-play"
                 (click)="play(track)"
-                [disabled]="loadingAudioId() === track.id"
+                [disabled]="loadingAudioId() === track.id || deletingTrackId() === track.id"
                 [class.active]="playingTrack()?.id === track.id"
                 [attr.aria-label]="playingTrack()?.id === track.id ? 'Arrêter la lecture' : 'Écouter ' + track.title"
               >
@@ -132,6 +141,20 @@
                   <span>■ Arrêter</span>
                 } @else {
                   <span>▶ Écouter</span>
+                }
+              </button>
+
+              <button
+                type="button"
+                class="btn-delete"
+                (click)="deleteTrack(track)"
+                [disabled]="deletingTrackId() === track.id || loadingAudioId() === track.id"
+                aria-label="Supprimer la piste"
+              >
+                @if (deletingTrackId() === track.id) {
+                  <span class="spinner-delete"></span>
+                } @else {
+                  <span>Supprimer</span>
                 }
               </button>
             </div>
@@ -208,6 +231,14 @@
         </div>
       }
     </article>
+  </div>
+
+  <div class="snackbar-container" [class.show]="snackBarMessage() !== null">
+    @if (snackBarMessage()) {
+      <div class="snackbar" [class.snackbar-error]="snackBarMessage()?.type === 'error'">
+        {{ snackBarMessage()?.text }}
+      </div>
+    }
   </div>
 </section>
 
