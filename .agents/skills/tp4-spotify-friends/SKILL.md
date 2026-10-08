@@ -9,163 +9,186 @@ description: >
 # TP4 Feuille de Route - Spotify Friends App
 
 ## Vision generale
-Application musicale style Spotify centree sur le social :
-- Ecouter et partager sa musique avec ses amis
-- Liker les pistes des autres
-- Voir l activite de ses amis en temps reel
-- UI inspiree de l album "From Zero" de Linkin Park
+Application musicale sociale style Spotify, conforme au sujet TP4 officiel.
+3 axes : (1) Fichiers publics/prives + partage amis, (2) WebAudio API avancee,
+(3) Social (amis, activite, likes)
 
 ---
 
-## Nouvelles features par priorite
+## PRIORITE 1 - Fichiers publics/prives & Social
 
-### PRIORITE 1 - Core social (backend + frontend)
+### A. Visibilite des pistes
+- Backend : champ visibility ("public"|"private") sur Track
+- GET /api/tracks/public : toutes pistes publiques
+- GET /api/tracks/recent : recemment ajoutees (20 max)
+- PATCH /api/tracks/:id/visibility : changer visibilite
+- Frontend : VisibilityToggleComponent, section "Recemment ajoutes" sur Home
 
-#### Feature A : Systeme d amis
-- **Backend** : Modele Friendship (pending/accepted/rejected)
-- **API** : POST /friends/request/:userId, PATCH /friends/request/:id, GET /friends, DELETE /friends/:userId
-- **Frontend** : Page "Discover" pour chercher des utilisateurs, composant FriendRequest
-- **Service Angular** : FriendsService avec signals
+### B. Systeme d amis
+- Modele Friendship (pending/accepted/rejected)
+- Index compose unique requesterId+addresseeId
+- CRUD : POST request, PATCH accept/reject, GET list, GET pending, DELETE
+- Frontend : FriendsService signals, FriendsPage, FriendCard, badge pending
 
-#### Feature B : Likes sur les pistes
-- **Backend** : Champ likes: [ObjectId] sur Track, POST/DELETE /tracks/:id/like
-- **API** : Exposer likesCount et liked (boolean) dans toPublic()
-- **Frontend** : Bouton like avec animation, compteur de likes
-- **Service Angular** : LikesService
+### C. Partage de pistes privees
+- Nouveau modele Share : trackId, ownerId, sharedWithId
+- POST /api/tracks/:id/share/:userId
+- DELETE /api/tracks/:id/share/:userId (STOPPER le partage)
+- GET /api/tracks/shared (pistes partagees avec moi)
+- Frontend : ShareModalComponent, liste des amis, gestion arret partage
 
-#### Feature C : Voir les pistes des amis
-- **Backend** : GET /api/tracks/friends (toutes les pistes des amis acceptes)
-- **Frontend** : Onglet "Friends" dans la page tracks
+### D. Search Files (obligatoire sujet)
+- GET /api/search?q=&type=tracks|users|all
+- Debounce 300ms cote frontend
+- Resultats groupes : pistes / utilisateurs
+- Pistes publiques + pistes de l utilisateur + pistes partagees avec lui
 
-### PRIORITE 2 - Experience musicale
+### E. Likes
+- likes: [ObjectId] sur Track, addToSet / pull
+- toPublic() expose likesCount et liked (boolean selon user)
+- Optimistic update cote frontend
 
-#### Feature D : Lecteur audio persistent
-- **Frontend** : PlayerBarComponent fixe en bas de page
-- **Service** : PlayerService avec signal track courante, play/pause, progression
-- **Pattern** : Singleton service, AudioContext Web API
-
-#### Feature E : File de lecture (Queue)
-- **Service** : QueueService avec signal liste, index courant, shuffle, repeat
-- **Frontend** : Bouton "Add to queue", composant QueuePanel
-
-#### Feature F : Avatar utilisateur
-- **Backend** : PUT /api/users/me/avatar (upload image, multer)
-- **Frontend** : Composant AvatarUpload
-
-### PRIORITE 3 - Polish UX
-
-#### Feature G : Notifications en temps reel (optionnel)
-- **Backend** : SSE (Server-Sent Events) ou polling toutes les 30s
-- **Frontend** : NotificationService, badge sur l icone amis
-
-#### Feature H : Recherche globale
-- **Backend** : GET /api/search?q= (pistes + utilisateurs)
-- **Frontend** : SearchBarComponent dans la navbar avec debounce
+### F. Activite des amis
+- GET /api/friends/activity : pistes publiques + partagees des amis
+- Frontend : ActivityFeedComponent avec flux chronologique
 
 ---
 
-## Architecture frontend cible
+## PRIORITE 2 - WebAudio API (explicitement demande sujet)
 
-```
-src/app/
-+-- components/
-|   +-- app/                  # Root component + layout
-|   +-- navbar/               # Sidebar navigation
-|   +-- player-bar/           # Lecteur fixe bas de page (NOUVEAU)
-|   +-- login-page/
-|   +-- register-page/
-|   +-- tracks-page/          # Mes pistes (ameliore)
-|   |   +-- track-upload/
-|   |   +-- track-row/        # Composant ligne piste (NOUVEAU)
-|   +-- friends-page/         # NOUVEAU
-|   |   +-- friend-card/
-|   |   +-- friend-request/
-|   +-- discover-page/        # NOUVEAU - Chercher des users
-|   +-- profile-page/         # Ameliore avec avatar
-+-- shared/
-    +-- models/
-    |   +-- user.model.ts
-    |   +-- track.model.ts    # Ajouter likesCount, liked
-    |   +-- friendship.model.ts  # NOUVEAU
-    |   +-- player-state.model.ts # NOUVEAU
-    +-- services/
-    |   +-- auth.service.ts
-    |   +-- tracks.service.ts  # Ameliore
-    |   +-- friends.service.ts # NOUVEAU
-    |   +-- player.service.ts  # NOUVEAU
-    |   +-- queue.service.ts   # NOUVEAU
-    |   +-- search.service.ts  # NOUVEAU
-    +-- guards/ + interceptors/
-    +-- pipes/
-        +-- duration.pipe.ts   # NOUVEAU - formater la duree
-        +-- file-size.pipe.ts  # Existant ou NOUVEAU
+### G. PlayerService avec Web Audio API
+```typescript
+private audioCtx = new AudioContext();
+private analyserNode = this.audioCtx.createAnalyser();
+private gainNode = this.audioCtx.createGain();
+private stereoPannerNode = this.audioCtx.createStereoPanner();
+// Signals : currentTrack, isPlaying, progress, volume, balance
 ```
 
+### H. Waveform
+- OfflineAudioContext pour decoder et dessiner la forme onde complete
+- Canvas HTML5, gradient orchid/blue
+- Curseur de position cliquable
+
+### I. Visualiseur frequences temps reel
+- AnalyserNode + requestAnimationFrame + Canvas
+- Barres FFT animees, couleurs orchid/blue
+- Background du player qui pulse selon la musique
+
+### J. VU-metres Stereo
+- getByteTimeDomainData en boucle sur G et D
+- Deux barres verticales avec peak indicator
+- Vert a orchid a rouge selon intensite
+
+### K. Egalizer graphique
+- Chaine BiquadFilterNode (Bass 100Hz, Mid 1kHz, Treble 8kHz)
+- Sliders verticaux custom en dB
+- Presets : Flat / Bass Boost / Vocal / Electronic
+
+### L. Effets audio
+- Reverb : ConvolverNode + impulse response synthetique
+- Delay : DelayNode (time + feedback)
+- Distortion : WaveShaperNode (amount)
+- Filter : BiquadFilterNode (cutoff + resonance)
+- Widgets : Knob rotatif Canvas/SVG, switches CSS, sliders custom
+
+### M. Background visual (shaders)
+- Canvas WebGL type Butterchurn/Milkdrop (opacite 0.4 en fond)
+- Alternative : particules CSS orchid/blue synchronisees sur AnalyserNode
+
 ---
 
-## Modeles TypeScript a creer
+## PRIORITE 3 - Polish UX
+
+### N. Avatar utilisateur
+- PUT /api/users/me/avatar (multer, 5Mo, jpeg/png/webp)
+- avatarUrl dans le modele User
+- AvatarComponent avec border gradient orchid-blue
+
+### O. Queue de lecture
+- QueueService : queue, currentIndex, shuffle, repeat (signals)
+- "Add to queue" sur chaque piste
+
+### P. Notifications polling 30s
+- Badge rouge sidebar si demandes d amis en attente
+- Toast acceptation demande
+
+---
+
+## Tests unitaires (obligatoires sujet)
+
+Backend (Jest/Mocha) :
+- Friendship model : creation, index unique, toPublic
+- Share model : creation, contraintes
+- Routes friends : request, accept, reject
+- Routes tracks : public/recent, like toggle, share/unshare
+
+Frontend (Jasmine/Karma ou Jest) :
+- FriendsService : signals, loading, error
+- LikeButtonComponent : optimistic update
+- PlayerService : play/pause, volume, balance, WebAudio nodes
+- SearchService : debounce, resultats groupes
+
+---
+
+## REPORT.md (obligatoire sujet)
+A rediger a la fin :
+- Fonctionnalites implementees
+- Choix techniques (WebAudio, MongoDB schema, Angular signals)
+- Architecture (diagrammes, flux)
+- Resultats des tests (couverture)
+- Difficultes et solutions
+
+---
+
+## Modeles TypeScript a creer/etendre
 
 ```typescript
-// friendship.model.ts
-export interface Friendship {
-  id: string;
-  requesterId: string;
-  addresseeId: string;
-  status: 'pending' | 'accepted' | 'rejected';
-  requester?: User; // populated
-  addressee?: User; // populated
-  createdAt: string;
-}
-
-// player-state.model.ts
-export interface PlayerState {
-  currentTrack: Track | null;
-  isPlaying: boolean;
-  progress: number; // 0-100
-  volume: number;   // 0-1
-  isShuffle: boolean;
-  repeatMode: 'none' | 'one' | 'all';
-}
-
 // track.model.ts (etendu)
 export interface Track {
-  id: string;
-  ownerId: string;
-  owner?: User;     // populated depuis GET /friends tracks
-  title: string;
-  originalName: string;
-  mimeType: string;
-  size: number;
-  likesCount: number;  // NOUVEAU
-  liked: boolean;      // NOUVEAU - si l utilisateur courant a like
+  id: string; ownerId: string; owner?: User;
+  title: string; originalName: string; mimeType: string; size: number;
+  visibility: 'public' | 'private'; // NOUVEAU
+  likesCount: number; liked: boolean; // NOUVEAU
   createdAt: string;
+}
+
+// friendship.model.ts (NOUVEAU)
+export interface Friendship {
+  id: string; requesterId: string; addresseeId: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  requester?: User; addressee?: User; createdAt: string;
+}
+
+// share.model.ts (NOUVEAU)
+export interface Share {
+  id: string; trackId: string; ownerId: string; sharedWithId: string;
+  track?: Track; sharedWith?: User; createdAt: string;
+}
+
+// player-state.model.ts (NOUVEAU)
+export interface PlayerState {
+  currentTrack: Track | null; isPlaying: boolean;
+  progress: number; volume: number; balance: number; // -1 a 1
+  isShuffle: boolean; repeatMode: 'none' | 'one' | 'all';
 }
 ```
 
 ---
 
-## Patterns de composants cles
-
-### Track Row (ligne dans la liste)
-Inputs : track, index, isPlaying
-Outputs : onPlay, onLike, onDelete
-
-### Friend Card
-Inputs : user, friendship?
-Outputs : onSendRequest, onAccept, onDecline, onRemove
-
-### Player Bar
-Utilise PlayerService directement (inject)
-Pas d Input/Output, etat global via signal
-
----
-
-## Checklist qualite par feature
-- Service injectable avec signals (loading, error, data)
-- Lazy loading de la page
-- Guard si route protegee
-- Composants avec OnPush
-- trackBy dans tous les @for
-- Gestion d erreur user-friendly
-- Animations CSS From Zero
-- Responsive (sidebar collapse sur mobile)
+## Ordre d implementation recommande
+1. Refonte UI globale (styles.scss, layout, Outfit)
+2. Visibilite public/prive + section "Recemment ajoutes"
+3. Search Files (barre + API)
+4. Systeme d amis (Friendship + FriendsPage)
+5. Partage de pistes (Share + modal + stopper)
+6. Activite des amis (ActivityFeed)
+7. Likes (LikeButton optimistic)
+8. Player WebAudio de base (AudioContext + PlayerBar)
+9. Waveform (Canvas + OfflineAudioContext)
+10. VU-metres + Visualiseur frequences (AnalyserNode + Canvas)
+11. Egaliseur + Effets audio (filtres WebAudio + knobs)
+12. Background shaders (WebGL / CSS)
+13. Avatar, Queue, Notifications (polish)
+14. Tests unitaires (toutes features)
+15. REPORT.md
