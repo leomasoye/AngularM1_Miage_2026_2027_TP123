@@ -18,6 +18,16 @@ const schema = new mongoose.Schema(
     storedName: { type: String, required: true, select: false },
     mimeType: { type: String, required: true },
     size: { type: Number, required: true, min: 0 },
+    visibility: {
+      type: String,
+      enum: ["private", "public"],
+      default: "private",
+      index: true
+    },
+    likes: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    }]
   },
   { timestamps: true },
 );
@@ -38,6 +48,8 @@ schema.methods.toPublic = function () {
     originalName: this.originalName,
     mimeType: this.mimeType,
     size: this.size,
+    visibility: this.visibility,
+    likes: this.likes ? this.likes.map(id => String(id)) : [],
     createdAt: this.createdAt,
   };
 };

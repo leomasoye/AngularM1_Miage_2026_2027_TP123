@@ -58,5 +58,31 @@ Le projet a ete segmente en missions logiques afin d assurer un developpement it
 - Le layout principal avec Sidebar est opérationnel sur les routes nécessitant une authentification.
 - Le thème global est unifié et fidèle aux maquettes de conception.
 
+
+## 4. Réalisation - Étape 0 : Modèle d'accès et Refactoring Backend
+*Date d'implémentation : 2026*
+
+**Objectif** : Refactoriser le backend (séparation des routes) et mettre en place le modèle d'accès sécurisé (`canAccessTrack`, `visibility`).
+
+**Travail réalisé** :
+- **Refactoring** :
+  - Découpage du fichier monolithique `app.js` en routeurs distincts : `routes/auth.routes.js`, `routes/user.routes.js`, `routes/track.routes.js`.
+  - Extraction de la configuration de Multer dans `middleware/upload.middleware.js`.
+  - Extraction de la vérification JWT dans `middleware/auth.middleware.js`.
+- **Modèle de données** :
+  - Modification du modèle `Track` (`models/Track.js`) pour ajouter un champ `visibility` (`'public' | 'private'`) avec indexation, et un tableau `likes` (préparation pour l'étape 3).
+  - Mise à jour de la méthode `toPublic()` pour retourner ces nouveaux champs.
+- **Sécurité et Contrôle d'accès** :
+  - Création de `middleware/track.middleware.js` contenant :
+    - `canAccessTrack(userId, track)` : Autorise l'accès si l'utilisateur est le propriétaire ou si la piste est publique.
+    - `requireOwner(req, res, next)` : Restreint les actions de modification/suppression au propriétaire.
+  - Sécurisation du endpoint `GET /api/tracks/:id/audio` pour renvoyer une erreur `404` si l'utilisateur n'a pas l'autorisation d'accéder à la piste (conformément aux règles métier).
+
+**Validation (DoD respecté)** : 
+- Le backend démarre sans erreur.
+- La structure est propre et modulaire.
+- La sécurité est en place pour interdire l'accès aux flux audio privés non autorisés.
+
 *(La suite de ce rapport sera complétée au fur et à mesure de l'implémentation, détaillant les fonctionnalités réalisées, les tests exécutés et les difficultés rencontrées).*
+
 
