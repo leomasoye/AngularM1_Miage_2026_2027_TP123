@@ -1,10 +1,22 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
 import { AuthService } from '../../shared/services/auth.service';
+import { Router } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
-  imports: [ReactiveFormsModule],
+  imports: [
+    ReactiveFormsModule,
+    MatButtonModule,
+    MatProgressSpinnerModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatIconModule
+  ],
   templateUrl: './profile-page.html',
   styleUrl: './profile-page.css',
 })
@@ -24,47 +36,44 @@ export class ProfilePageComponent implements OnInit {
     }),
   });
 
-  ngOnInit(): void {
+  ngOnInit() {
     this.load();
   }
 
   load(): void {
     this.isLoading.set(true);
     this.error.set('');
-
-    this.auth.profile().subscribe({
+    
+    this.auth.refreshProfile().subscribe({
       next: (user) => {
         this.isLoading.set(false);
-        this.form.setValue({ name: user.name });
+        this.form.patchValue({ name: user.name });
       },
-      error: (err: { error?: { message?: string } }) => {
+      error: (err) => {
         this.isLoading.set(false);
         this.error.set(err.error?.message ?? 'Impossible de charger le profil');
-      },
+      }
     });
   }
 
   save(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
+    if (this.form.invalid) return;
 
     this.isSaving.set(true);
     this.error.set('');
     this.success.set('');
 
     const newName = this.form.getRawValue().name;
-    this.auth.update(newName).subscribe({
-      next: (user) => {
+    this.auth.updateProfile(newName).subscribe({
+      next: () => {
         this.isSaving.set(false);
-        this.form.setValue({ name: user.name });
-        this.success.set('Nom mis à jour avec succès !');
+        this.success.set('Profil mis à jour avec succès.');
+        setTimeout(() => this.success.set(''), 3000);
       },
-      error: (err: { error?: { message?: string } }) => {
+      error: (err) => {
         this.isSaving.set(false);
-        this.error.set(err.error?.message ?? 'Impossible de modifier le nom');
-      },
+        this.error.set(err.error?.message ?? 'Impossible de mettre à jour le profil');
+      }
     });
   }
 

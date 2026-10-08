@@ -1,3 +1,12 @@
-/* Styles for TrackUploadComponent */
+:host {
+  display: block;
+}
 
-/* Add component-specific styles here */
+.full-width {
+  width: 100%;
+}
+
+.file-upload-wrapper:hover {
+  background: rgba(155, 63, 212, 0.05);
+  border-color: rgba(155, 63, 212, 0.5);
+}

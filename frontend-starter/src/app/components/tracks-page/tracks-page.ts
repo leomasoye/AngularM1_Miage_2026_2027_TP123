@@ -9,15 +9,32 @@ import {
 import { HttpEventType } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { Track } from '../../shared/models/track.model';
 import { TrackService } from '../../shared/services/track.service';
 import { TrackUploadComponent } from './track-upload/track-upload.component';
 import { TrackCardComponent } from './track-card/track-card.component';
 import { TrackPaginationComponent } from './track-pagination/track-pagination.component';
-import { NavbarComponent } from '../navbar/navbar.component';
 
 @Component({
-  imports: [ReactiveFormsModule, DatePipe, TrackUploadComponent, TrackCardComponent, TrackPaginationComponent, NavbarComponent],
+  imports: [
+    ReactiveFormsModule, 
+    DatePipe, 
+    TrackUploadComponent, 
+    TrackCardComponent, 
+    TrackPaginationComponent,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    MatSnackBarModule,
+    MatSelectModule,
+    MatFormFieldModule
+  ],
   templateUrl: './tracks-page.html',
   styleUrl: './tracks-page.css',
 })
@@ -242,9 +259,15 @@ export class TracksPageComponent implements OnDestroy {
     });
   }
 
+  private snackBar = inject(MatSnackBar);
+
   private showSnackBar(text: string, type: 'success' | 'error'): void {
-    this.snackBarMessage.set({ text, type });
-    setTimeout(() => this.snackBarMessage.set(null), 4000);
+    this.snackBar.open(text, 'Fermer', {
+      duration: 4000,
+      panelClass: type === 'error' ? ['snackbar-error'] : ['snackbar-success'],
+      horizontalPosition: 'center',
+      verticalPosition: 'bottom'
+    });
   }
 
   play(track: Track): void {
