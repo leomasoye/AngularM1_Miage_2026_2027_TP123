@@ -11,9 +11,13 @@ import { DatePipe } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Track } from '../../shared/models/track.model';
 import { TrackService } from '../../shared/services/track.service';
+import { TrackUploadComponent } from './track-upload/track-upload.component';
+import { TrackCardComponent } from './track-card/track-card.component';
+import { TrackPaginationComponent } from './track-pagination/track-pagination.component';
+import { NavbarComponent } from '../navbar/navbar.component';
 
 @Component({
-  imports: [ReactiveFormsModule, DatePipe],
+  imports: [ReactiveFormsModule, DatePipe, TrackUploadComponent, TrackCardComponent, TrackPaginationComponent, NavbarComponent],
   templateUrl: './tracks-page.html',
   styleUrl: './tracks-page.css',
 })

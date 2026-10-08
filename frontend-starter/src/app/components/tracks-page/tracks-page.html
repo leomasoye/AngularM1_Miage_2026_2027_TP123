@@ -7,69 +7,26 @@
 
   <div class="grid">
     <!-- Formulaire d'upload -->
-    <article class="card upload-card">
-      <div class="card-header">
-        <h2>Importer un morceau</h2>
-        <span class="badge-info">Max 25 Mo</span>
-      </div>
+    <app-track-upload
+  [title]="title"
+  [uploading]="uploading()"
+  [uploadProgress]="uploadProgress()"
+  [uploadError]="uploadError()"
+  [uploadSuccess]="uploadSuccess()"
+  (choose)="choose($event)"
+  (upload)="upload()"
+></app-track-upload>
 
-      <div class="form-group">
-        <label for="track-title">Titre du morceau</label>
-        <input
-          id="track-title"
-          [formControl]="title"
-          placeholder="Ex: Solo Blues en La mineur"
-          [disabled]="uploading()"
-        />
-      </div>
 
-      <div class="form-group">
-        <label for="track-file">Fichier audio (MP3, WAV, OGG, M4A)</label>
-        <input
-          #fileInput
-          id="track-file"
-          type="file"
-          accept="audio/mpeg,audio/wav,audio/x-wav,audio/ogg,audio/mp4,audio/x-m4a,.mp3,.wav,.ogg,.m4a"
-          (change)="choose($event)"
-          [disabled]="uploading()"
-        />
-      </div>
 
-      @if (uploadError()) {
-        <div class="alert-error" role="alert">
-          <span>{{ uploadError() }}</span>
-        </div>
-      }
 
-      @if (uploadSuccess()) {
-        <div class="alert-success" role="status">
-          <span>{{ uploadSuccess() }}</span>
-        </div>
-      }
 
-      @if (uploading() && uploadProgress() !== null) {
-        <div class="upload-progress-wrapper">
-          <div class="upload-progress-text">Envoi en cours... <strong>{{ uploadProgress() }}%</strong></div>
-          <div class="progress-container">
-            <div class="progress-bar" [style.width.%]="uploadProgress()"></div>
-          </div>
-        </div>
-      }
 
-      <button
-        type="button"
-        class="btn-primary"
-        (click)="upload()"
-        [disabled]="!file || uploading()"
-      >
-        @if (uploading()) {
-          <span class="spinner"></span>
-          <span>Envoi en cours…</span>
-        } @else {
-          <span>Importer le fichier</span>
-        }
-      </button>
-    </article>
+
+
+
+
+
 
     <!-- Liste des pistes et lecteur -->
     <article class="card list-card">

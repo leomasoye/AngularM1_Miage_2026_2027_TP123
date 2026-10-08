@@ -1,0 +1,21 @@
+<article class="card upload-card">
+  <header class="card-header"><h2>Importer un morceau</h2><span class="badge-info">Max 25 Mo</span></header>
+  <div class="form-group">
+    <label for="track-title">Titre du morceau</label>
+    <input id="track-title" [formControl]="title" placeholder="Ex: Solo Blues en La mineur" [disabled]="uploading" />
+  </div>
+  <div class="form-group">
+    <label for="track-file">Fichier audio (MP3, WAV, OGG, M4A)</label>
+    <input #fileInput id="track-file" type="file" accept="audio/*" (change)="choose.emit($event)" [disabled]="uploading" />
+  </div>
+  <div *ngIf="uploadError" class="alert-error" role="alert"><span>{{ uploadError }}</span></div>
+  <div *ngIf="uploadSuccess" class="alert-success" role="status"><span>{{ uploadSuccess }}</span></div>
+  <div *ngIf="uploading && uploadProgress !== null" class="upload-progress">
+    <span>Envoi en cours... {{ uploadProgress }}%</span>
+    <div class="progress-bar" [style.width.%]="uploadProgress"></div>
+  </div>
+  <button type="button" class="btn-primary" (click)="upload.emit()" [disabled]="uploading">
+    <span *ngIf="uploading" class="spinner"></span>
+    <span *ngIf="!uploading">Importer le fichier</span>
+  </button>
+</article>
