@@ -1,5 +1,5 @@
-<section class="card auth-card">
-  <h1>Connexion</h1>
+<section class="glass-card auth-card animate-in">
+  <h1 class="text-display">Connexion</h1>
 
   @if (sessionExpired()) {
     <div class="warning-banner">
@@ -7,38 +7,33 @@
     </div>
   }
 
-  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-    <label>
-      <span>Email</span>
-      <input
-        type="email"
-        formControlName="email"
-        autocomplete="email"
-        [class.invalid]="form.controls.email.touched && form.controls.email.invalid"
-      />
-    </label>
-    @if (form.controls.email.touched && form.controls.email.errors?.['required']) {
-      <small class="field-error">L'adresse email est requise.</small>
-    }
-    @if (form.controls.email.touched && form.controls.email.errors?.['email']) {
-      <small class="field-error">Veuillez saisir une adresse email valide.</small>
-    }
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="auth-form">
+    <mat-form-field appearance="fill" class="full-width">
+      <mat-label>Email</mat-label>
+      <input matInput type="email" formControlName="email" autocomplete="email">
+      @if (form.controls.email.hasError('required')) {
+        <mat-error>L'adresse email est requise.</mat-error>
+      }
+      @if (form.controls.email.hasError('email')) {
+        <mat-error>Veuillez saisir une adresse email valide.</mat-error>
+      }
+    </mat-form-field>
 
-    <label>
-      <span>Mot de passe</span>
-      <input
-        type="password"
-        formControlName="password"
-        autocomplete="current-password"
-        [class.invalid]="form.controls.password.touched && form.controls.password.invalid"
-      />
-    </label>
-    @if (form.controls.password.touched && form.controls.password.errors?.['required']) {
-      <small class="field-error">Le mot de passe est requis.</small>
-    }
+    <mat-form-field appearance="fill" class="full-width">
+      <mat-label>Mot de passe</mat-label>
+      <input matInput type="password" formControlName="password" autocomplete="current-password">
+      @if (form.controls.password.hasError('required')) {
+        <mat-error>Le mot de passe est requis.</mat-error>
+      }
+    </mat-form-field>
 
-    <button type="submit" [disabled]="isLoading()">
-      {{ isLoading() ? 'Connexion en cours...' : 'Se connecter' }}
+    <button mat-flat-button class="btn-primary full-width" type="submit" [disabled]="isLoading()">
+      @if (isLoading()) {
+        <mat-spinner diameter="24" color="accent" class="inline-spinner"></mat-spinner>
+        Connexion en cours...
+      } @else {
+        Se connecter
+      }
     </button>
   </form>
 
@@ -46,8 +41,7 @@
     <p class="error">{{ error() }}</p>
   }
 
-  <p class="auth-footer">
+  <p class="auth-footer text-muted">
     Pas encore de compte ? <a routerLink="/register">Créer un compte</a>
   </p>
 </section>
-

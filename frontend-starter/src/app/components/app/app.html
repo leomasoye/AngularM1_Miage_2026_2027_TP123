@@ -1,23 +1,46 @@
-<header>
-  <div class="brand">
-    <a routerLink="/" class="brand-title">Guitar Practice Cloud</a>
-    <small>Le cloud qui manque à votre ampli</small>
+@if (auth.isLoggedIn()) {
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <a routerLink="/" class="brand-title">From Zero</a>
+      </div>
+      
+      <div class="nav-links">
+        <a routerLink="/tracks" routerLinkActive="active" class="nav-item">
+          <span class="material-symbols-outlined">library_music</span>
+          Bibliothèque
+        </a>
+        <a routerLink="/search" routerLinkActive="active" class="nav-item">
+          <span class="material-symbols-outlined">search</span>
+          Rechercher
+        </a>
+        <a routerLink="/friends" routerLinkActive="active" class="nav-item">
+          <span class="material-symbols-outlined">group</span>
+          Amis
+        </a>
+        <a routerLink="/profile" routerLinkActive="active" class="nav-item">
+          <span class="material-symbols-outlined">account_circle</span>
+          Profil @if (auth.currentUser(); as user) { ({{ user.name }}) }
+        </a>
+      </div>
+
+      <div class="spacer"></div>
+
+      <button type="button" class="btn-nav-logout nav-item" (click)="logout()">
+        <span class="material-symbols-outlined">logout</span>
+        Déconnexion
+      </button>
+    </aside>
+
+    <main class="content-area">
+      <router-outlet />
+    </main>
   </div>
-  <nav aria-label="Navigation principale">
-    @if (auth.isLoggedIn()) {
-      <a routerLink="/tracks" routerLinkActive="active">Backing tracks</a>
-      <a routerLink="/profile" routerLinkActive="active">
-        Profil @if (auth.currentUser(); as user) { ({{ user.name }}) }
-      </a>
-      <button type="button" class="btn-nav-logout" (click)="logout()">Déconnexion</button>
-    } @else {
-      <a routerLink="/login" routerLinkActive="active">Connexion</a>
-      <a routerLink="/register" routerLinkActive="active">Créer un compte</a>
-    }
-  </nav>
-</header>
+} @else {
+  <main class="public-area">
+    <router-outlet />
+  </main>
+}
 
-<main>
-  <router-outlet />
-</main>
-
+<!-- Placeholder pour le player-bar (sera implémenté plus tard) -->
+<div id="player-portal"></div>
