@@ -1,0 +1,65 @@
+<section class="animate-in" style="max-width: 800px; margin: 0 auto; padding: 2rem;">
+  <div class="hero" style="margin-bottom: 2rem;">
+    <p class="text-label" style="color: var(--orchid-300)">RÉSEAU</p>
+    <h1 class="text-display">Mes Amis</h1>
+  </div>
+
+  @if (loading()) {
+    <div style="text-align: center; padding: 4rem;">
+      <mat-spinner diameter="40" style="margin: 0 auto;"></mat-spinner>
+    </div>
+  } @else {
+    
+    <!-- Demandes Reçues -->
+    @if (pendingIncoming().length > 0) {
+      <article class="glass-card" style="padding: 1.5rem; margin-bottom: 2rem;">
+        <h2 class="text-heading" style="color: var(--electric-blue); margin-bottom: 1rem;">Demandes d'amitié</h2>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          @for (req of pendingIncoming(); track req.id) {
+            <div class="friend-row">
+              <span class="text-body" style="font-weight: 600;">{{ req.friendName }}</span>
+              <div>
+                <button mat-button color="primary" (click)="updateStatus(req, 'accepted')">Accepter</button>
+                <button mat-button color="warn" (click)="updateStatus(req, 'rejected')">Refuser</button>
+              </div>
+            </div>
+          }
+        </div>
+      </article>
+    }
+
+    <!-- Liste d'amis -->
+    <article class="glass-card" style="padding: 1.5rem; margin-bottom: 2rem;">
+      <h2 class="text-heading" style="margin-bottom: 1rem;">Mes amis</h2>
+      <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+        @for (friend of acceptedFriends(); track friend.id) {
+          <div class="friend-row">
+            <span class="text-body" style="font-weight: 600;">{{ friend.friendName }}</span>
+            <button mat-icon-button color="warn" (click)="removeFriend(friend)" title="Retirer des amis">
+              <mat-icon>person_remove</mat-icon>
+            </button>
+          </div>
+        } @empty {
+          <p class="text-muted text-center">Vous n'avez pas encore d'amis. Utilisez la recherche pour en trouver !</p>
+        }
+      </div>
+    </article>
+
+    <!-- Demandes envoyées en attente -->
+    @if (pendingOutgoing().length > 0) {
+      <article class="glass-card" style="padding: 1.5rem;">
+        <h2 class="text-heading" style="color: var(--text-muted); margin-bottom: 1rem;">Demandes envoyées en attente</h2>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          @for (req of pendingOutgoing(); track req.id) {
+            <div class="friend-row">
+              <span class="text-body text-muted">{{ req.friendName }}</span>
+              <button mat-icon-button color="warn" (click)="removeFriend(req)" title="Annuler la demande">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+      </article>
+    }
+  }
+</section>

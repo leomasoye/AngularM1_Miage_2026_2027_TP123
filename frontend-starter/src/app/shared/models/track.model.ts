@@ -5,5 +5,9 @@ export interface Track {
   originalName: string;
   mimeType: string;
   size: number;
+  ownerId: string;
+  ownerName?: string;
+  visibility: 'public' | 'private';
+  likes: string[];
   createdAt: string;
 }

@@ -1,0 +1,72 @@
+<section class="animate-in" style="max-width: 1200px; margin: 0 auto; padding: 2rem;">
+  <div class="hero" style="margin-bottom: 2rem;">
+    <p class="text-label" style="color: var(--orchid-300)">RECHERCHE</p>
+    <h1 class="text-display">Rechercher</h1>
+    
+    <div style="margin-top: 1.5rem; max-width: 600px; display: flex; gap: 1rem;">
+      <input #searchInput type="text" [value]="query()" (keyup.enter)="updateQuery(searchInput.value)" placeholder="Titres, Artistes, Amis..." class="search-input" style="flex: 1; padding: 1rem; border-radius: var(--radius-full); border: 1px solid var(--border-subtle); background: var(--bg-surface); color: var(--text-primary); font-size: 1.1rem; outline: none; transition: border-color var(--transition-fast);">
+      <button mat-flat-button class="btn-primary" (click)="updateQuery(searchInput.value)" style="border-radius: var(--radius-full); padding: 0 2rem;">
+        <mat-icon>search</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div style="text-align: center; padding: 4rem;">
+      <mat-spinner diameter="40" style="margin: 0 auto;"></mat-spinner>
+      <p class="text-muted" style="margin-top: 1rem;">Recherche en cours...</p>
+    </div>
+  } @else if (error()) {
+    <div class="alert-error" style="background: rgba(255,82,82,0.1); border: 1px solid #ff5252; padding: 1rem; border-radius: var(--radius-sm); color: #ff5252;">
+      {{ error() }}
+    </div>
+  } @else {
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+      
+      <!-- Tracks Results -->
+      <article class="glass-card" style="padding: 1.5rem;">
+        <h2 class="text-heading" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem;">
+          <mat-icon color="primary">music_note</mat-icon> Pistes publiques
+        </h2>
+        
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          @for (track of results().tracks; track track.id) {
+            <div class="track-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border-radius: var(--radius-sm); background: var(--bg-surface); border: 1px solid rgba(255,255,255,0.05);">
+              <div>
+                <div class="text-body" style="font-weight: 600;">{{ track.title }}</div>
+                <div class="text-small text-muted">Par {{ track.ownerName }}</div>
+              </div>
+<div style="display: flex; gap: 0.5rem;"><app-like-button [track]="track"></app-like-button><button mat-icon-button color="primary" title="Jouer (Bientôt disponible)"><mat-icon>play_circle</mat-icon></button></div>
+            </div>
+          } @empty {
+            <p class="text-muted text-center" style="padding: 1rem;">Aucune piste trouvée.</p>
+          }
+        </div>
+      </article>
+
+      <!-- Users Results -->
+      <article class="glass-card" style="padding: 1.5rem;">
+        <h2 class="text-heading" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem;">
+          <mat-icon color="primary">people</mat-icon> Utilisateurs
+        </h2>
+        
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          @for (user of results().users; track user.id) {
+            <div class="user-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border-radius: var(--radius-sm); background: var(--bg-surface); border: 1px solid rgba(255,255,255,0.05);">
+              <div style="display: flex; align-items: center; gap: 1rem;">
+                <mat-icon style="color: var(--text-muted);">account_circle</mat-icon>
+                <div class="text-body" style="font-weight: 600;">{{ user.name }}</div>
+              </div>
+<button mat-icon-button color="primary" (click)="addFriend(user.id)" title="Ajouter en ami"><mat-icon>person_add</mat-icon></button>
+            </div>
+          } @empty {
+            <p class="text-muted text-center" style="padding: 1rem;">Aucun utilisateur trouvé.</p>
+          }
+        </div>
+      </article>
+
+    </div>
+  }
+</section>
+
+

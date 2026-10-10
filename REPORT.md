@@ -83,6 +83,62 @@ Le projet a ete segmente en missions logiques afin d assurer un developpement it
 - La structure est propre et modulaire.
 - La sécurité est en place pour interdire l'accès aux flux audio privés non autorisés.
 
+
+## 5. Réalisation - Étape 2 : Visibilité et Recherche
+*Date d'implémentation : 2026*
+
+**Objectif** : Ajouter une visibilité aux pistes et permettre la recherche sans fuite d'informations sensibles (notamment les e-mails).
+
+**Travail réalisé** :
+- **Backend - Recherche** :
+  - Création du routeur `src/routes/search.routes.js`.
+  - Implémentation de `GET /api/search` protégé par un `rateLimit` (anti-bruteforce).
+  - Échappement des requêtes régulières (Regex) via `escapeRegex` pour prévenir les attaques **ReDoS**.
+  - La recherche utilisateur ne sélectionne que le `name` et l'`_id`, excluant formellement le `passwordHash` et l'`email`.
+  - La recherche des pistes retourne le nom du propriétaire via `populate` et filtre sur `visibility: "public"`.
+- **Backend - Visibilité** :
+  - Route `PATCH /api/tracks/:id/visibility` sécurisée par `requireOwner`.
+- **Frontend** :
+  - Mise à jour du modèle `Track` (`visibility`, `ownerName`, `ownerId`).
+  - Ajout d'une méthode `updateVisibility` dans `TrackService`.
+  - Intégration d'un bouton bascule (cadenas/globe) dans `TracksPageComponent` permettant à l'utilisateur de rendre une piste publique ou privée.
+  - Création de `SearchResultsComponent` (Page dédiée `/search`) avec une barre de recherche.
+  - Mise en place du service `SearchService`.
+
+**Validation (DoD respecté)** : 
+- La recherche s'effectue proprement et renvoie les pistes publiques et les utilisateurs.
+- Les adresses e-mails ne sont **jamais** exposées par l'API de recherche.
+- La page de résultats est modulaire et prête à accueillir les boutons "Ajouter en ami" ou "Lecture" des prochaines étapes.
+
+
+## 6. Réalisation - Étape 3 : Core Social (Amis & Likes)
+*Date d'implémentation : 2026*
+
+**Objectif** : Mettre en place un système d'amis avec processus de demande/validation et un système de likes (avec affichage optimiste).
+
+**Travail réalisé** :
+- **Backend - Modèle `Friendship`** :
+  - Création de `models/Friendship.js` (requester, addressee, status: pending/accepted/rejected).
+  - Validation Mongoose pour empêcher l'auto-amitié.
+  - Index unique `{ requesterId, addresseeId }` pour éviter les doublons.
+- **Backend - Routes `friends` et `likes`** :
+  - `GET /api/friends`, `POST /api/friends`, `PATCH /api/friends/:id/status`, `DELETE /api/friends/:id`.
+  - Rate-Limiting ajouté sur la route `POST` (création de demande d'amitié).
+  - Gestion intelligente des amitiés croisées : si B a déjà fait une demande à A, et que A fait une demande à B, l'amitié est directement acceptée.
+  - `POST /api/tracks/:id/like` et `DELETE /api/tracks/:id/like` avec les opérations atomiques MongoDB `$addToSet` et `$pull`.
+- **Frontend** :
+  - Création de `FriendsPageComponent` avec 3 listes : "Demandes reçues", "Mes amis", "Demandes envoyées en attente".
+  - Ajout du bouton "Ajouter en ami" sur les utilisateurs dans `SearchResultsComponent`.
+  - Création du composant `LikeButtonComponent` 100% autonome. Il gère son propre état (optimistic update : UI changée avant la requête, rollback en cas d'erreur HTTP).
+  - Intégration du composant `LikeButtonComponent` dans `TracksPageComponent` et `SearchResultsComponent`.
+
+**Validation (DoD respecté)** : 
+- On peut chercher un utilisateur et lui envoyer une demande.
+- On peut accepter ou refuser une demande dans l'onglet "Amis".
+- Les clics sur le bouton "J'aime" s'affichent instantanément sans lag (Optimistic update) et mettent à jour la base MongoDB.
+
 *(La suite de ce rapport sera complétée au fur et à mesure de l'implémentation, détaillant les fonctionnalités réalisées, les tests exécutés et les difficultés rencontrées).*
+
+
 
 

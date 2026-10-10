@@ -3,6 +3,8 @@ import cors from "cors";
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import trackRoutes from "./routes/track.routes.js";
+import searchRoutes from "./routes/search.routes.js";
+import friendsRoutes from "./routes/friends.routes.js";
 import multer from "multer";
 
 export function createApp() {
@@ -26,6 +28,8 @@ export function createApp() {
   app.use("/api/auth", authRoutes);
   app.use("/api/users", userRoutes);
   app.use("/api/tracks", trackRoutes);
+  app.use("/api/search", searchRoutes);
+  app.use("/api/friends", friendsRoutes);
 
   app.use((error, _req, res, next) => {
     console.error("[error] Erreur reçue par le gestionnaire central", error);
@@ -45,3 +49,5 @@ export function createApp() {
 
   return app;
 }
+
+

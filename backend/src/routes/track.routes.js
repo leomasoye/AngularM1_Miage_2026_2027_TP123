@@ -118,4 +118,51 @@ router.delete("/:id", auth, loadTrack, requireOwner, async (req, res, next) => {
   }
 });
 
+router.patch("/:id/visibility", auth, loadTrack, requireOwner, async (req, res, next) => {
+  try {
+    const { visibility } = req.body;
+    if (visibility !== "public" && visibility !== "private") {
+      return res.status(400).json({ message: "Visibilité invalide" });
+    }
+
+    req.track.visibility = visibility;
+    await req.track.save();
+
+    res.json(req.track.toPublic());
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/:id/like", auth, loadTrack, async (req, res, next) => {
+  try {
+    // on empêche pas de liker une track si on a accès ? Normalement si on y a accès on peut la liker
+    if (!canAccessTrack(req.auth.sub, req.track)) {
+      return res.status(404).json({ message: "Piste inconnue" });
+    }
+
+    req.track.likes.addToSet(req.auth.sub);
+    await req.track.save();
+    res.json(req.track.toPublic());
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/:id/like", auth, loadTrack, async (req, res, next) => {
+  try {
+    if (!canAccessTrack(req.auth.sub, req.track)) {
+      return res.status(404).json({ message: "Piste inconnue" });
+    }
+
+    req.track.likes.pull(req.auth.sub);
+    await req.track.save();
+    res.json(req.track.toPublic());
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
+
+

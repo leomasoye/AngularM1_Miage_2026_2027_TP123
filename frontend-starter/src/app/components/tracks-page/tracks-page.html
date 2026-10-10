@@ -75,6 +75,9 @@
             </div>
 
             <div class="track-actions">
+<app-like-button [track]="track"></app-like-button><button mat-icon-button [color]="track.visibility === 'public' ? 'primary' : ''" (click)="toggleVisibility(track)" [title]="track.visibility === 'public' ? 'Piste publique' : 'Piste privée'">
+                <mat-icon>{{ track.visibility === 'public' ? 'public' : 'lock' }}</mat-icon>
+              </button>
               <button mat-icon-button color="warn" (click)="deleteTrack(track)" [disabled]="deletingTrackId() === track.id || loadingAudioId() === track.id" title="Supprimer">
                 @if (deletingTrackId() === track.id) {
                   <mat-spinner diameter="20"></mat-spinner>
@@ -125,3 +128,5 @@
     </article>
   </div>
 </section>
+
+

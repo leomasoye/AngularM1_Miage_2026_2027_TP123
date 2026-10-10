@@ -14,10 +14,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatSelectModule } from '@angular/material/select';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatFormFieldModule, MatMenuModule } from '@angular/material/form-field';
+import { MatMenuModule } from '@angular/material/menu';
 import { Track } from '../../shared/models/track.model';
 import { TrackService } from '../../shared/services/track.service';
 import { TrackUploadComponent } from './track-upload/track-upload.component';
+import { LikeButtonComponent } from '../like-button/like-button';
 import { TrackCardComponent } from './track-card/track-card.component';
 import { TrackPaginationComponent } from './track-pagination/track-pagination.component';
 
@@ -33,7 +35,7 @@ import { TrackPaginationComponent } from './track-pagination/track-pagination.co
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatSelectModule,
-    MatFormFieldModule
+    MatFormFieldModule, MatMenuModule
   ],
   templateUrl: './tracks-page.html',
   styleUrl: './tracks-page.css',
@@ -227,6 +229,17 @@ export class TracksPageComponent implements OnDestroy {
     });
   }
 
+  toggleVisibility(track: Track): void {
+    const newVisibility = track.visibility === 'public' ? 'private' : 'public';
+    this.trackService.updateVisibility(track.id, newVisibility).subscribe({
+      next: (updatedTrack) => {
+        this.tracks.update(tracks => tracks.map(t => t.id === updatedTrack.id ? updatedTrack : t));
+        this.showSnackBar(`La piste est maintenant ${newVisibility === 'public' ? 'publique' : 'privée'}.`, 'success');
+      },
+      error: () => this.showSnackBar('Erreur lors de la modification de la visibilité.', 'error')
+    });
+  }
+
   deleteTrack(track: Track): void {
     if (!window.confirm(`Êtes-vous sûr de vouloir supprimer la piste "${track.title}" ?`)) return;
 
@@ -330,3 +343,5 @@ export class TracksPageComponent implements OnDestroy {
     return mimeType?.replace('audio/', '').toUpperCase() || 'AUDIO';
   }
 }
+
+
