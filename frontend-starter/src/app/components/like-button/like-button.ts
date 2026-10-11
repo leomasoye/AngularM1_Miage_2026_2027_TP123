@@ -1,5 +1,4 @@
-import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, computed, EventEmitter, inject, Input, Output, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { Track } from '../../shared/models/track.model';
@@ -9,14 +8,16 @@ import { AuthService } from '../../shared/services/auth.service';
 @Component({
   selector: 'app-like-button',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatButtonModule],
+  imports: [MatIconModule, MatButtonModule],
   template: `
-    <button mat-icon-button (click)="toggleLike()" [class.liked]="isLiked()" [title]="isLiked() ? 'Je n\'aime plus' : 'J\'aime'">
-      <mat-icon [style.color]="isLiked() ? 'var(--orchid-300)' : 'var(--text-muted)'">
-        {{ isLiked() ? 'favorite' : 'favorite_border' }}
+    <button mat-icon-button (click)="toggleLike()" [title]="likeTitle()">
+      <mat-icon [style.color]="liked() ? 'var(--orchid-300)' : 'var(--text-muted)'">
+        {{ liked() ? 'favorite' : 'favorite_border' }}
       </mat-icon>
     </button>
-    <span class="text-small text-muted" *ngIf="track.likes.length > 0">{{ track.likes.length }}</span>
+    @if (likesCount() > 0) {
+      <span class="text-small text-muted">{{ likesCount() }}</span>
+    }
   `,
   styles: [`
     :host {
@@ -27,47 +28,51 @@ import { AuthService } from '../../shared/services/auth.service';
   `]
 })
 export class LikeButtonComponent {
-  @Input({ required: true }) track!: Track;
+  @Input({ required: true }) set track(value: Track) {
+    this._track = value;
+    const userId = this.auth.currentUser()?.id;
+    this.liked.set(!!userId && value.likes.includes(userId));
+    this.likesCount.set(value.likes.length);
+  }
+  get track(): Track { return this._track; }
+  private _track!: Track;
+
   @Output() trackUpdated = new EventEmitter<Track>();
+
+  readonly liked = signal(false);
+  readonly likesCount = signal(0);
+  readonly likeTitle = computed(() => this.liked() ? "Je n'aime plus" : "J'aime");
 
   private readonly trackService = inject(TrackService);
   private readonly auth = inject(AuthService);
-
-  isLiked(): boolean {
-    const userId = this.auth.currentUser()?.id;
-    return !!userId && this.track.likes.includes(userId);
-  }
 
   toggleLike() {
     const userId = this.auth.currentUser()?.id;
     if (!userId) return;
 
-    const liked = this.isLiked();
+    const wasLiked = this.liked();
 
-    // Optimistic Update
-    if (liked) {
-      this.track.likes = this.track.likes.filter(id => id !== userId);
-    } else {
-      this.track.likes.push(userId);
-    }
+    // Optimistic Update : UI change immédiatement
+    this.liked.set(!wasLiked);
+    this.likesCount.update(c => wasLiked ? c - 1 : c + 1);
 
-    const request = liked 
-      ? this.trackService.unlike(this.track.id)
-      : this.trackService.like(this.track.id);
+    const request = wasLiked
+      ? this.trackService.unlike(this._track.id)
+      : this.trackService.like(this._track.id);
 
     request.subscribe({
       next: (updatedTrack) => {
-        this.track = updatedTrack;
+        const newLiked = !!userId && updatedTrack.likes.includes(userId);
+        this.liked.set(newLiked);
+        this.likesCount.set(updatedTrack.likes.length);
+        this._track = updatedTrack;
         this.trackUpdated.emit(updatedTrack);
       },
       error: () => {
-        // Rollback
-        if (liked) {
-          this.track.likes.push(userId);
-        } else {
-          this.track.likes = this.track.likes.filter(id => id !== userId);
-        }
-        console.error('Erreur lors du like');
+        // Rollback si erreur HTTP
+        this.liked.set(wasLiked);
+        this.likesCount.update(c => wasLiked ? c + 1 : c - 1);
+        console.error('[LikeButton] Erreur lors du like, rollback appliqué');
       }
     });
   }

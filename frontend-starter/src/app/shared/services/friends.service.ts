@@ -1,7 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
 
 export interface Friendship {
   id: string;
@@ -17,21 +16,20 @@ export interface Friendship {
 })
 export class FriendsService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = `${environment.apiUrl}/friends`;
 
   getFriends(): Observable<Friendship[]> {
-    return this.http.get<Friendship[]>(this.apiUrl);
+    return this.http.get<Friendship[]>('/api/friends');
   }
 
   addFriend(addresseeId: string): Observable<Friendship> {
-    return this.http.post<Friendship>(this.apiUrl, { addresseeId });
+    return this.http.post<Friendship>('/api/friends', { addresseeId });
   }
 
   updateStatus(id: string, status: 'accepted' | 'rejected'): Observable<Friendship> {
-    return this.http.patch<Friendship>(`${this.apiUrl}/${id}/status`, { status });
+    return this.http.patch<Friendship>(`/api/friends/${id}/status`, { status });
   }
 
   removeFriend(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    return this.http.delete<void>(`/api/friends/${id}`);
   }
 }

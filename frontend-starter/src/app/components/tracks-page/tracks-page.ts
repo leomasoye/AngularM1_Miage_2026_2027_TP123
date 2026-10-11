@@ -14,34 +14,31 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatSelectModule } from '@angular/material/select';
-import { MatFormFieldModule, MatMenuModule } from '@angular/material/form-field';
-import { MatMenuModule } from '@angular/material/menu';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { Track } from '../../shared/models/track.model';
 import { TrackService } from '../../shared/services/track.service';
 import { TrackUploadComponent } from './track-upload/track-upload.component';
 import { LikeButtonComponent } from '../like-button/like-button';
-import { TrackCardComponent } from './track-card/track-card.component';
-import { TrackPaginationComponent } from './track-pagination/track-pagination.component';
 
 @Component({
   imports: [
-    ReactiveFormsModule, 
-    DatePipe, 
-    TrackUploadComponent, 
-    TrackCardComponent, 
-    TrackPaginationComponent,
+    ReactiveFormsModule,
+    DatePipe,
+    TrackUploadComponent,
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatSelectModule,
-    MatFormFieldModule, MatMenuModule
+    MatFormFieldModule,
+    LikeButtonComponent,
   ],
   templateUrl: './tracks-page.html',
   styleUrl: './tracks-page.css',
 })
 export class TracksPageComponent implements OnDestroy {
   private readonly service = inject(TrackService);
+  private readonly snackBar = inject(MatSnackBar);
   private readonly fileInputRef = viewChild<ElementRef<HTMLInputElement>>('fileInput');
 
   // Limite et formats autorisés (alignés sur le backend)
@@ -64,17 +61,16 @@ export class TracksPageComponent implements OnDestroy {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
 
-  // Signaux pour l'upload (Mission 3)
+  // Signaux pour l'upload
   readonly uploading = signal(false);
   readonly uploadProgress = signal<number | null>(null);
   readonly uploadError = signal<string | null>(null);
   readonly uploadSuccess = signal<string | null>(null);
 
-  // Signaux pour la suppression et le snackbar
+  // Signaux pour la suppression
   readonly deletingTrackId = signal<string | null>(null);
-  readonly snackBarMessage = signal<{text: string, type: 'success' | 'error'} | null>(null);
 
-  // Signaux pour le lecteur audio (Mission 3)
+  // Signaux pour le lecteur audio
   readonly audioUrl = signal('');
   readonly playingTrack = signal<Track | null>(null);
   readonly loadingAudioId = signal<string | null>(null);
@@ -108,7 +104,6 @@ export class TracksPageComponent implements OnDestroy {
       return;
     }
 
-    // Validation taille (<= 25 Mo) côté client
     if (selectedFile.size > this.MAX_FILE_SIZE) {
       const sizeMo = (selectedFile.size / (1024 * 1024)).toFixed(1);
       this.uploadError.set(
@@ -119,14 +114,11 @@ export class TracksPageComponent implements OnDestroy {
       return;
     }
 
-    // Validation format audio côté client
     const isMimeAllowed = this.ALLOWED_MIME_TYPES.has(selectedFile.type);
     const hasAudioExt = /\.(mp3|wav|ogg|m4a|mp4)$/i.test(selectedFile.name);
 
     if (!isMimeAllowed && !hasAudioExt) {
-      this.uploadError.set(
-        'Format non accepté. Formats autorisés : MP3, WAV, OGG, M4A.'
-      );
+      this.uploadError.set('Format non accepté. Formats autorisés : MP3, WAV, OGG, M4A.');
       this.file = undefined;
       input.value = '';
       return;
@@ -135,7 +127,6 @@ export class TracksPageComponent implements OnDestroy {
     this.file = selectedFile;
     console.debug('[TracksPage] Fichier sélectionné valide :', this.file.name);
 
-    // Pré-remplir le titre si non renseigné
     if (!this.title.value.trim()) {
       const nameWithoutExt = selectedFile.name.replace(/\.[^/.]+$/, '');
       this.title.setValue(nameWithoutExt);
@@ -176,7 +167,6 @@ export class TracksPageComponent implements OnDestroy {
   upload(): void {
     if (!this.file || this.uploading()) return;
 
-    // Double vérification frontend de sécurité
     if (this.file.size > this.MAX_FILE_SIZE) {
       this.uploadError.set('Le fichier dépasse la limite autorisée de 25 Mo.');
       return;
@@ -200,19 +190,11 @@ export class TracksPageComponent implements OnDestroy {
           this.uploading.set(false);
           this.uploadProgress.set(null);
           this.uploadSuccess.set(`Piste "${track.title}" importée avec succès !`);
-
-          // Effacer le message de succès après 5 secondes
           setTimeout(() => this.uploadSuccess.set(null), 5000);
-
-          // Réinitialiser le formulaire
           this.title.setValue('');
           this.file = undefined;
           const input = this.fileInputRef()?.nativeElement;
-          if (input) {
-            input.value = '';
-          }
-
-          // Recharger la première page pour voir le nouveau morceau en haut
+          if (input) input.value = '';
           this.page.set(1);
           this.load();
         }
@@ -221,9 +203,7 @@ export class TracksPageComponent implements OnDestroy {
         console.error('[TracksPage] Envoi impossible', error);
         this.uploading.set(false);
         this.uploadProgress.set(null);
-        const message =
-          error?.error?.message ||
-          'Une erreur est survenue lors de l\'envoi du fichier audio.';
+        const message = error?.error?.message || 'Une erreur est survenue lors de l\'envoi du fichier audio.';
         this.uploadError.set(message);
       },
     });
@@ -231,13 +211,17 @@ export class TracksPageComponent implements OnDestroy {
 
   toggleVisibility(track: Track): void {
     const newVisibility = track.visibility === 'public' ? 'private' : 'public';
-    this.trackService.updateVisibility(track.id, newVisibility).subscribe({
+    this.service.updateVisibility(track.id, newVisibility).subscribe({
       next: (updatedTrack) => {
         this.tracks.update(tracks => tracks.map(t => t.id === updatedTrack.id ? updatedTrack : t));
         this.showSnackBar(`La piste est maintenant ${newVisibility === 'public' ? 'publique' : 'privée'}.`, 'success');
       },
       error: () => this.showSnackBar('Erreur lors de la modification de la visibilité.', 'error')
     });
+  }
+
+  onTrackLiked(updatedTrack: Track): void {
+    this.tracks.update(tracks => tracks.map(t => t.id === updatedTrack.id ? updatedTrack : t));
   }
 
   deleteTrack(track: Track): void {
@@ -248,31 +232,18 @@ export class TracksPageComponent implements OnDestroy {
       next: () => {
         this.deletingTrackId.set(null);
         this.showSnackBar(`Piste "${track.title}" supprimée avec succès.`, 'success');
-
-        if (this.playingTrack()?.id === track.id) {
-          this.stop();
-        }
-
-        // Check if we need to go to previous page (if it was the last element on the current page)
-        if (this.tracks().length === 1 && this.page() > 1) {
-          this.page.set(this.page() - 1);
-        }
-        
+        if (this.playingTrack()?.id === track.id) this.stop();
+        if (this.tracks().length === 1 && this.page() > 1) this.page.set(this.page() - 1);
         this.load();
       },
       error: (error) => {
         this.deletingTrackId.set(null);
         const message = error?.error?.message || 'Erreur lors de la suppression de la piste.';
         this.showSnackBar(message, 'error');
-        
-        if (error.status === 404 || error.status === 403) {
-          this.load();
-        }
+        if (error.status === 404 || error.status === 403) this.load();
       }
     });
   }
-
-  private snackBar = inject(MatSnackBar);
 
   private showSnackBar(text: string, type: 'success' | 'error'): void {
     this.snackBar.open(text, 'Fermer', {
@@ -284,7 +255,6 @@ export class TracksPageComponent implements OnDestroy {
   }
 
   play(track: Track): void {
-    // Si la piste est déjà en cours de lecture, un second clic coupe l'écoute
     if (this.playingTrack()?.id === track.id && this.audioUrl()) {
       this.stop();
       return;
@@ -297,19 +267,14 @@ export class TracksPageComponent implements OnDestroy {
       next: (blob) => {
         console.debug('[TracksPage] Audio chargé avec succès', track.id);
         const previousUrl = this.audioUrl();
-        if (previousUrl) {
-          URL.revokeObjectURL(previousUrl);
-        }
-
+        if (previousUrl) URL.revokeObjectURL(previousUrl);
         this.audioUrl.set(URL.createObjectURL(blob));
         this.playingTrack.set(track);
         this.loadingAudioId.set(null);
       },
       error: (error) => {
         console.error('[TracksPage] Lecture impossible', error);
-        this.audioError.set(
-          error?.error?.message || `Impossible de lire la piste "${track.title}".`
-        );
+        this.audioError.set(error?.error?.message || `Impossible de lire la piste "${track.title}".`);
         this.loadingAudioId.set(null);
       },
     });
@@ -318,7 +283,6 @@ export class TracksPageComponent implements OnDestroy {
   stop(): void {
     const currentUrl = this.audioUrl();
     if (currentUrl) {
-      console.debug('[TracksPage] Arrêt de la lecture et révocation de l\'URL');
       URL.revokeObjectURL(currentUrl);
       this.audioUrl.set('');
     }
@@ -328,9 +292,7 @@ export class TracksPageComponent implements OnDestroy {
 
   formatSize(bytes: number): string {
     if (!bytes && bytes !== 0) return '0 Ko';
-    if (bytes < 1024 * 1024) {
-      return `${(bytes / 1024).toFixed(1)} Ko`;
-    }
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
     return `${(bytes / (1024 * 1024)).toFixed(2)} Mo`;
   }
 
@@ -343,5 +305,3 @@ export class TracksPageComponent implements OnDestroy {
     return mimeType?.replace('audio/', '').toUpperCase() || 'AUDIO';
   }
 }
-
-

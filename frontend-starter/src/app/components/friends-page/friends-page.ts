@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -38,17 +38,17 @@ export class FriendsPageComponent implements OnInit {
     });
   }
 
-  get pendingIncoming() {
-    return this.friendships().filter(f => f.status === 'pending' && f.isIncoming);
-  }
+  readonly pendingIncoming = computed(() =>
+    this.friendships().filter(f => f.status === 'pending' && f.isIncoming)
+  );
 
-  get pendingOutgoing() {
-    return this.friendships().filter(f => f.status === 'pending' && !f.isIncoming);
-  }
+  readonly pendingOutgoing = computed(() =>
+    this.friendships().filter(f => f.status === 'pending' && !f.isIncoming)
+  );
 
-  get acceptedFriends() {
-    return this.friendships().filter(f => f.status === 'accepted');
-  }
+  readonly acceptedFriends = computed(() =>
+    this.friendships().filter(f => f.status === 'accepted')
+  );
 
   updateStatus(friendship: Friendship, status: 'accepted' | 'rejected') {
     this.friendsService.updateStatus(friendship.id, status).subscribe({

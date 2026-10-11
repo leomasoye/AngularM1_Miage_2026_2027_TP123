@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Page } from '../models/page.model';
 import { Track } from '../models/track.model';
+import { Observable } from 'rxjs';
 
 /** Encapsulates all HTTP operations for backing tracks. */
 @Injectable({ providedIn: 'root' })
@@ -24,8 +25,8 @@ export class TrackService {
     });
   }
 
-  delete(id: string) {
-    return this.http.delete(`/api/tracks/${id}`);
+  delete(id: string): Observable<void> {
+    return this.http.delete<void>(`/api/tracks/${id}`);
   }
 
   audio(id: string) {
@@ -33,6 +34,16 @@ export class TrackService {
       responseType: 'blob',
     });
   }
+
+  updateVisibility(id: string, visibility: 'public' | 'private'): Observable<Track> {
+    return this.http.patch<Track>(`/api/tracks/${id}/visibility`, { visibility });
+  }
+
+  like(id: string): Observable<Track> {
+    return this.http.post<Track>(`/api/tracks/${id}/like`, {});
+  }
+
+  unlike(id: string): Observable<Track> {
+    return this.http.delete<Track>(`/api/tracks/${id}/like`);
+  }
 }
-
-

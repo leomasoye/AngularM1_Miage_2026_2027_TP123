@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { FriendsService } from '../../shared/services/friends.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -12,7 +12,7 @@ import { SearchService, SearchResults } from '../../shared/services/search.servi
 @Component({
   selector: 'app-search-results',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatProgressSpinnerModule, MatIconModule, MatButtonModule, LikeButtonComponent],
+  imports: [CommonModule, MatProgressSpinnerModule, MatIconModule, MatButtonModule, LikeButtonComponent],
   templateUrl: './search-results.html',
   styleUrl: './search-results.css'
 })

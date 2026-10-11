@@ -1,17 +1,22 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FriendsPage } from './friends-page';
+import { FriendsPageComponent } from './friends-page';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
-describe('FriendsPage', () => {
-  let component: FriendsPage;
-  let fixture: ComponentFixture<FriendsPage>;
+describe('FriendsPageComponent', () => {
+  let component: FriendsPageComponent;
+  let fixture: ComponentFixture<FriendsPageComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [FriendsPage]
-    })
-      .compileComponents();
+      imports: [FriendsPageComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting()
+      ]
+    }).compileComponents();
 
-    fixture = TestBed.createComponent(FriendsPage);
+    fixture = TestBed.createComponent(FriendsPageComponent);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

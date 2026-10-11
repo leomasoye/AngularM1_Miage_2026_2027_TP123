@@ -1,5 +1,6 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { SlicePipe } from '@angular/common';
 import { AuthService } from '../../shared/services/auth.service';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,6 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 @Component({
   imports: [
     ReactiveFormsModule,
+    SlicePipe,
     MatButtonModule,
     MatProgressSpinnerModule,
     MatFormFieldModule,
@@ -43,13 +45,13 @@ export class ProfilePageComponent implements OnInit {
   load(): void {
     this.isLoading.set(true);
     this.error.set('');
-    
-    this.auth.refreshProfile().subscribe({
+
+    this.auth.profile().subscribe({
       next: (user) => {
         this.isLoading.set(false);
         this.form.patchValue({ name: user.name });
       },
-      error: (err) => {
+      error: (err: { error?: { message?: string } }) => {
         this.isLoading.set(false);
         this.error.set(err.error?.message ?? 'Impossible de charger le profil');
       }
@@ -64,13 +66,13 @@ export class ProfilePageComponent implements OnInit {
     this.success.set('');
 
     const newName = this.form.getRawValue().name;
-    this.auth.updateProfile(newName).subscribe({
+    this.auth.update(newName).subscribe({
       next: () => {
         this.isSaving.set(false);
         this.success.set('Profil mis à jour avec succès.');
         setTimeout(() => this.success.set(''), 3000);
       },
-      error: (err) => {
+      error: (err: { error?: { message?: string } }) => {
         this.isSaving.set(false);
         this.error.set(err.error?.message ?? 'Impossible de mettre à jour le profil');
       }

@@ -1,17 +1,24 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { SearchResults } from './search-results';
+import { SearchResultsComponent } from './search-results';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 
-describe('SearchResults', () => {
-  let component: SearchResults;
-  let fixture: ComponentFixture<SearchResults>;
+describe('SearchResultsComponent', () => {
+  let component: SearchResultsComponent;
+  let fixture: ComponentFixture<SearchResultsComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [SearchResults]
-    })
-      .compileComponents();
+      imports: [SearchResultsComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([])
+      ]
+    }).compileComponents();
 
-    fixture = TestBed.createComponent(SearchResults);
+    fixture = TestBed.createComponent(SearchResultsComponent);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });
