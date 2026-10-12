@@ -1,0 +1,72 @@
+<div class="share-dialog-container">
+  <div class="dialog-header">
+    <div class="header-icon">
+      <mat-icon>share</mat-icon>
+    </div>
+    <div class="header-text">
+      <h2 mat-dialog-title class="dialog-title">Partager avec vos amis</h2>
+      <p class="dialog-subtitle text-muted">
+        Morceau : <strong class="track-name">{{ data.track.title }}</strong>
+      </p>
+    </div>
+    <button mat-icon-button (click)="close()" class="close-btn" title="Fermer">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content class="dialog-content">
+    @if (loading()) {
+      <div class="loading-state">
+        <mat-spinner diameter="36"></mat-spinner>
+        <p class="text-muted">Chargement de vos amis…</p>
+      </div>
+    } @else {
+      @if (friends().length === 0) {
+        <div class="empty-state">
+          <mat-icon class="empty-icon">group_off</mat-icon>
+          <p class="text-body">Vous n'avez pas encore d'amis acceptés.</p>
+          <p class="text-small text-muted">
+            Ajoutez des amis depuis l'onglet « Amis » pour pouvoir partager vos pistes privées avec eux.
+          </p>
+        </div>
+      } @else {
+        <div class="friends-list">
+          @for (friend of friends(); track friend.friendId) {
+            <div class="friend-row">
+              <div class="friend-info">
+                <div class="friend-avatar">
+                  {{ friend.friendName.charAt(0).toUpperCase() }}
+                </div>
+                <div class="friend-name">{{ friend.friendName }}</div>
+              </div>
+
+              <div class="friend-action">
+                <button
+                  mat-flat-button
+                  [class.btn-shared]="isShared(friend.friendId)"
+                  [class.btn-share]="!isShared(friend.friendId)"
+                  [disabled]="savingUserId() === friend.friendId"
+                  (click)="toggleShare(friend)"
+                >
+                  @if (savingUserId() === friend.friendId) {
+                    <mat-spinner diameter="18"></mat-spinner>
+                  } @else if (isShared(friend.friendId)) {
+                    <mat-icon>check</mat-icon>
+                    <span>Partagé</span>
+                  } @else {
+                    <mat-icon>person_add</mat-icon>
+                    <span>Partager</span>
+                  }
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" class="dialog-actions">
+    <button mat-button (click)="close()">Fermer</button>
+  </mat-dialog-actions>
+</div>

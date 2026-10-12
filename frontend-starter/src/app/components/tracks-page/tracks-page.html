@@ -76,6 +76,9 @@
 
             <div class="track-actions">
               <app-like-button [track]="track" (trackUpdated)="onTrackLiked($event)"></app-like-button>
+              <button mat-icon-button (click)="openShareModal(track)" title="Partager avec des amis">
+                <mat-icon>share</mat-icon>
+              </button>
               <button mat-icon-button [color]="track.visibility === 'public' ? 'primary' : ''" (click)="toggleVisibility(track)" [title]="track.visibility === 'public' ? 'Piste publique' : 'Piste privée'">
                 <mat-icon>{{ track.visibility === 'public' ? 'public' : 'lock' }}</mat-icon>
               </button>

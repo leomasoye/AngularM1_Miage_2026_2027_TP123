@@ -2,6 +2,8 @@ import express from "express";
 import fsPromises from "node:fs/promises";
 import path from "node:path";
 import { Track } from "../models/Track.js";
+import { Share } from "../models/Share.js";
+import { Friendship } from "../models/Friendship.js";
 import { auth } from "../middleware/auth.middleware.js";
 import { canAccessTrack, requireOwner } from "../middleware/track.middleware.js";
 import { upload, UPLOADS } from "../middleware/upload.middleware.js";
@@ -21,6 +23,41 @@ async function loadTrack(req, res, next) {
     next(error);
   }
 }
+
+router.get("/shared", auth, async (req, res, next) => {
+  try {
+    const shares = await Share.find({ sharedWithId: req.auth.sub })
+      .populate({
+        path: "trackId",
+        select: "-storedName",
+        populate: { path: "ownerId", select: "name" },
+      })
+      .sort({ createdAt: -1 });
+
+    const items = shares
+      .filter((s) => s.trackId)
+      .map((s) => {
+        const track = s.trackId;
+        return {
+          id: String(track._id),
+          title: track.title,
+          originalName: track.originalName,
+          mimeType: track.mimeType,
+          size: track.size,
+          visibility: track.visibility,
+          likes: track.likes ? track.likes.map((l) => String(l)) : [],
+          ownerId: String(track.ownerId?._id || track.ownerId),
+          ownerName: track.ownerId?.name || "Ami",
+          isShared: true,
+          createdAt: track.createdAt,
+        };
+      });
+
+    res.json(items);
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.get("/", auth, async (req, res, next) => {
   try {
@@ -84,7 +121,7 @@ router.post("/", auth, upload.single("audio"), async (req, res, next) => {
 
 router.get("/:id/audio", auth, loadTrack, async (req, res, next) => {
   try {
-    if (!canAccessTrack(req.auth.sub, req.track)) {
+    if (!(await canAccessTrack(req.auth.sub, req.track))) {
       return res.status(404).json({ message: "Piste inconnue" }); // Renvoie 404 comme demandé
     }
 
@@ -101,6 +138,7 @@ router.get("/:id/audio", auth, loadTrack, async (req, res, next) => {
 router.delete("/:id", auth, loadTrack, requireOwner, async (req, res, next) => {
   try {
     await Track.findByIdAndDelete(req.track.id);
+    await Share.deleteMany({ trackId: req.track.id });
     
     const audioPath = path.join(UPLOADS, req.track.storedName);
     try {
@@ -136,8 +174,7 @@ router.patch("/:id/visibility", auth, loadTrack, requireOwner, async (req, res, 
 
 router.post("/:id/like", auth, loadTrack, async (req, res, next) => {
   try {
-    // on empêche pas de liker une track si on a accès ? Normalement si on y a accès on peut la liker
-    if (!canAccessTrack(req.auth.sub, req.track)) {
+    if (!(await canAccessTrack(req.auth.sub, req.track))) {
       return res.status(404).json({ message: "Piste inconnue" });
     }
 
@@ -151,13 +188,80 @@ router.post("/:id/like", auth, loadTrack, async (req, res, next) => {
 
 router.delete("/:id/like", auth, loadTrack, async (req, res, next) => {
   try {
-    if (!canAccessTrack(req.auth.sub, req.track)) {
+    if (!(await canAccessTrack(req.auth.sub, req.track))) {
       return res.status(404).json({ message: "Piste inconnue" });
     }
 
     req.track.likes.pull(req.auth.sub);
     await req.track.save();
     res.json(req.track.toPublic());
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Récupérer les partages d'une piste
+router.get("/:id/shares", auth, loadTrack, requireOwner, async (req, res, next) => {
+  try {
+    const shares = await Share.find({ trackId: req.track.id })
+      .populate("sharedWithId", "name")
+      .sort({ createdAt: -1 });
+
+    const mapped = shares.map((s) => ({
+      id: String(s._id),
+      userId: String(s.sharedWithId?._id || s.sharedWithId),
+      userName: s.sharedWithId?.name || "Ami",
+      createdAt: s.createdAt,
+    }));
+
+    res.json(mapped);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Partager une piste avec un ami
+router.post("/:id/share/:userId", auth, loadTrack, requireOwner, async (req, res, next) => {
+  try {
+    const targetUserId = req.params.userId;
+    if (targetUserId === req.auth.sub) {
+      return res.status(400).json({ message: "Vous ne pouvez pas partager une piste avec vous-même." });
+    }
+
+    const isFriend = await Friendship.exists({
+      $or: [
+        { requesterId: req.auth.sub, addresseeId: targetUserId, status: "accepted" },
+        { requesterId: targetUserId, addresseeId: req.auth.sub, status: "accepted" },
+      ],
+    });
+
+    if (!isFriend) {
+      return res.status(400).json({ message: "Vous ne pouvez partager qu'avec un ami accepté." });
+    }
+
+    let share = await Share.findOne({ trackId: req.track.id, sharedWithId: targetUserId });
+    if (!share) {
+      share = await Share.create({
+        trackId: req.track.id,
+        ownerId: req.auth.sub,
+        sharedWithId: targetUserId,
+      });
+    }
+
+    res.status(201).json(share.toPublic());
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Supprimer le partage d'une piste avec un ami
+router.delete("/:id/share/:userId", auth, loadTrack, requireOwner, async (req, res, next) => {
+  try {
+    await Share.findOneAndDelete({
+      trackId: req.track.id,
+      sharedWithId: req.params.userId,
+    });
+    res.status(204).end();
   } catch (error) {
     next(error);
   }

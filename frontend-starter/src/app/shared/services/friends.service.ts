@@ -32,4 +32,9 @@ export class FriendsService {
   removeFriend(id: string): Observable<void> {
     return this.http.delete<void>(`/api/friends/${id}`);
   }
+
+  getPending(): Observable<{ count: number; items: any[] }> {
+    return this.http.get<{ count: number; items: any[] }>('/api/friends/pending');
+  }
 }
+

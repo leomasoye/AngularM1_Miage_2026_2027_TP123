@@ -10,13 +10,20 @@
           <span class="material-symbols-outlined">library_music</span>
           Bibliothèque
         </a>
+        <a routerLink="/activity" routerLinkActive="active" class="nav-item">
+          <span class="material-symbols-outlined">rss_feed</span>
+          Activité
+        </a>
         <a routerLink="/search" routerLinkActive="active" class="nav-item">
           <span class="material-symbols-outlined">search</span>
           Rechercher
         </a>
         <a routerLink="/friends" routerLinkActive="active" class="nav-item">
           <span class="material-symbols-outlined">group</span>
-          Amis
+          <span style="flex: 1;">Amis</span>
+          @if (pendingCount() > 0) {
+            <span class="pending-badge">{{ pendingCount() }}</span>
+          }
         </a>
         <a routerLink="/profile" routerLinkActive="active" class="nav-item">
           <span class="material-symbols-outlined">account_circle</span>

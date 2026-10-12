@@ -13,8 +13,15 @@ export const routes: Routes = [
   { path: 'register', component: RegisterPageComponent },
   { path: 'profile', component: ProfilePageComponent, canActivate: [authGuard] },
   { path: 'tracks', component: TracksPageComponent, canActivate: [authGuard] },
+  {
+    path: 'activity',
+    loadComponent: () =>
+      import('./components/activity-feed/activity-feed.component').then(
+        (m) => m.ActivityFeedComponent
+      ),
+    canActivate: [authGuard],
+  },
   { path: 'search', component: SearchResultsComponent, canActivate: [authGuard] },
   { path: 'friends', component: FriendsPageComponent, canActivate: [authGuard] },
   { path: '**', redirectTo: 'tracks' },
 ];
-

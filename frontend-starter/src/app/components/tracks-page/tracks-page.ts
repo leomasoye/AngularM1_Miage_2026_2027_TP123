@@ -15,10 +15,12 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Track } from '../../shared/models/track.model';
 import { TrackService } from '../../shared/services/track.service';
 import { TrackUploadComponent } from './track-upload/track-upload.component';
 import { LikeButtonComponent } from '../like-button/like-button';
+import { ShareModalComponent } from '../share-modal/share-modal.component';
 
 @Component({
   imports: [
@@ -31,6 +33,7 @@ import { LikeButtonComponent } from '../like-button/like-button';
     MatSnackBarModule,
     MatSelectModule,
     MatFormFieldModule,
+    MatDialogModule,
     LikeButtonComponent,
   ],
   templateUrl: './tracks-page.html',
@@ -39,6 +42,7 @@ import { LikeButtonComponent } from '../like-button/like-button';
 export class TracksPageComponent implements OnDestroy {
   private readonly service = inject(TrackService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
   private readonly fileInputRef = viewChild<ElementRef<HTMLInputElement>>('fileInput');
 
   // Limite et formats autorisés (alignés sur le backend)
@@ -303,5 +307,12 @@ export class TracksPageComponent implements OnDestroy {
     if (mimeType?.includes('m4a') || filename?.toLowerCase().endsWith('.m4a')) return 'M4A';
     if (mimeType?.includes('mp4') || filename?.toLowerCase().endsWith('.mp4')) return 'MP4';
     return mimeType?.replace('audio/', '').toUpperCase() || 'AUDIO';
+  }
+
+  openShareModal(track: Track): void {
+    this.dialog.open(ShareModalComponent, {
+      data: { track },
+      width: '480px',
+    });
   }
 }

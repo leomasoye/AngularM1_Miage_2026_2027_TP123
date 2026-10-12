@@ -1,0 +1,141 @@
+<section class="activity-feed-page animate-in">
+  <div class="hero">
+    <p class="text-label" style="color: var(--orchid-300)">COMMUNAUTÉ</p>
+    <h1 class="text-display">Fil d'actualité</h1>
+    <p class="text-body text-secondary">
+      Découvrez les derniers morceaux publiés ou partagés par vos amis en temps réel.
+    </p>
+  </div>
+
+  <div class="feed-container">
+    <div class="feed-header">
+      <h2 class="text-heading" style="margin: 0">Activités récentes</h2>
+      <button mat-stroked-button (click)="loadInitialActivity()" [disabled]="loading()">
+        <mat-icon>refresh</mat-icon> Actualiser
+      </button>
+    </div>
+
+    @if (loading()) {
+      <div class="loading-state">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p class="text-muted">Chargement des nouveautés de vos amis…</p>
+      </div>
+    } @else {
+      @if (activities().length === 0) {
+        <div class="empty-state glass-card">
+          <mat-icon class="empty-icon">music_off</mat-icon>
+          <h3 class="text-heading">Aucune activité pour le moment</h3>
+          <p class="text-secondary" style="max-width: 480px; margin: 0 auto 1.5rem;">
+            Vos amis n'ont pas encore publié de pistes ou vous n'avez pas encore d'amis. Rendez-vous dans la section <strong>Amis</strong> pour vous connecter avec d'autres utilisateurs !
+          </p>
+        </div>
+      } @else {
+        <div class="activities-list">
+          @for (track of activities(); track track.id) {
+            <article
+              class="activity-card glass-card"
+              [class.is-playing]="playingTrack()?.id === track.id"
+            >
+              <div class="card-top">
+                <div class="user-meta">
+                  <div class="user-avatar">
+                    {{ (track.ownerName || 'A').charAt(0).toUpperCase() }}
+                  </div>
+                  <div>
+                    <span class="user-name">{{ track.ownerName }}</span>
+                    <span class="action-desc text-muted">
+                      {{ track.isShared ? 'a partagé un morceau avec vous' : 'a publié un morceau' }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="badges">
+                  @if (track.isShared) {
+                    <span class="badge badge-shared">
+                      <mat-icon class="badge-icon">share</mat-icon> Partagé avec vous
+                    </span>
+                  } @else {
+                    <span class="badge badge-public">
+                      <mat-icon class="badge-icon">public</mat-icon> Public
+                    </span>
+                  }
+                  <span class="date-text text-small text-muted">
+                    {{ track.createdAt | date:'d MMM y, HH:mm' }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="card-body">
+                <div class="track-info">
+                  <button
+                    mat-icon-button
+                    class="btn-play-track"
+                    (click)="play(track)"
+                    [disabled]="loadingAudioId() === track.id"
+                  >
+                    @if (loadingAudioId() === track.id) {
+                      <mat-spinner diameter="24"></mat-spinner>
+                    } @else if (playingTrack()?.id === track.id) {
+                      <mat-icon color="primary">pause_circle</mat-icon>
+                    } @else {
+                      <mat-icon>play_circle</mat-icon>
+                    }
+                  </button>
+
+                  <div class="track-details">
+                    <h3 class="track-title">{{ track.title }}</h3>
+                    <p class="track-sub text-small text-muted">
+                      {{ track.originalName }} • {{ formatSize(track.size) }}
+                    </p>
+                  </div>
+                </div>
+
+                <div class="track-actions">
+                  <app-like-button
+                    [track]="track"
+                    (trackUpdated)="onTrackLiked($event)"
+                  ></app-like-button>
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+
+        @if (hasMore()) {
+          <div class="load-more-container">
+            <button
+              mat-stroked-button
+              class="btn-load-more"
+              (click)="loadMore()"
+              [disabled]="loadingMore()"
+            >
+              @if (loadingMore()) {
+                <mat-spinner diameter="20"></mat-spinner>
+              } @else {
+                <mat-icon>expand_more</mat-icon>
+                <span>Charger plus d'activités</span>
+              }
+            </button>
+          </div>
+        }
+      }
+    }
+
+    @if (audioUrl() && playingTrack()) {
+      <div class="player-bar-container glass-card">
+        <div class="player-header">
+          <div class="player-status">
+            <span class="now-playing-dot"></span>
+            <span class="text-label" style="color: var(--orchid-500)">LECTURE EN COURS</span>
+          </div>
+          <button mat-icon-button color="warn" (click)="stop()" title="Arrêter"><mat-icon>close</mat-icon></button>
+        </div>
+        <div>
+          <h4 style="margin: 0; font-size: 1.1rem;">{{ playingTrack()?.title }}</h4>
+          <p class="text-small text-muted" style="margin: 0.25rem 0 0.75rem;">Par {{ playingTrack()?.ownerName }}</p>
+          <audio [src]="audioUrl()" controls autoplay style="width: 100%; border-radius: var(--radius-sm);"></audio>
+        </div>
+      </div>
+    }
+  </div>
+</section>

@@ -10,7 +10,9 @@ export class AuthService {
   private readonly http = inject(HttpClient);
 
   readonly currentUser = signal<User | null>(null);
-  readonly token = signal<string | null>(localStorage.getItem('gpc_token'));
+  readonly token = signal<string | null>(
+    typeof localStorage !== 'undefined' ? localStorage.getItem('gpc_token') : null
+  );
   readonly isLoggedIn = computed(() => !!this.token());
 
   login(email: string, password: string) {
@@ -38,13 +40,17 @@ export class AuthService {
   }
 
   logout(): void {
-    localStorage.removeItem('gpc_token');
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('gpc_token');
+    }
     this.token.set(null);
     this.currentUser.set(null);
   }
 
   private storeAuthentication(response: AuthResponse): void {
-    localStorage.setItem('gpc_token', response.token);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('gpc_token', response.token);
+    }
     this.token.set(response.token);
     this.currentUser.set(response.user);
   }

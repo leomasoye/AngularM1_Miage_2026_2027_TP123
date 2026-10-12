@@ -1,6 +1,7 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
 import { Friendship } from "../models/Friendship.js";
+import { Share } from "../models/Share.js";
 import { User } from "../models/User.js";
 import { auth } from "../middleware/auth.middleware.js";
 
@@ -33,6 +34,31 @@ router.get("/", auth, async (req, res, next) => {
     });
 
     res.json(mapped);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Récupérer les demandes en attente et leur compteur (pour le polling)
+router.get("/pending", auth, async (req, res, next) => {
+  try {
+    const userId = req.auth.sub;
+    const pending = await Friendship.find({
+      addresseeId: userId,
+      status: "pending"
+    }).populate("requesterId", "name");
+
+    const items = pending.map(f => ({
+      id: String(f._id),
+      requesterId: String(f.requesterId._id),
+      requesterName: f.requesterId.name,
+      createdAt: f.createdAt
+    }));
+
+    res.json({
+      count: items.length,
+      items
+    });
   } catch (error) {
     next(error);
   }
@@ -148,13 +174,13 @@ router.delete("/:id", auth, async (req, res, next) => {
 
     await Friendship.findByIdAndDelete(friendship._id);
     
-    // TODO: cascade suppression Share Etape 4
-    // await mongoose.model('Share').deleteMany({
-    //   $or: [
-    //     { ownerId: friendship.requesterId, sharedWithId: friendship.addresseeId },
-    //     { ownerId: friendship.addresseeId, sharedWithId: friendship.requesterId }
-    //   ]
-    // });
+    // Cascade suppression des partages entre ces deux utilisateurs
+    await Share.deleteMany({
+      $or: [
+        { ownerId: friendship.requesterId, sharedWithId: friendship.addresseeId },
+        { ownerId: friendship.addresseeId, sharedWithId: friendship.requesterId }
+      ]
+    });
 
     res.status(204).end();
   } catch (error) {
