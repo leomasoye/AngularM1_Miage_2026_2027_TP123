@@ -25,6 +25,9 @@ const schema = new mongoose.Schema(
 
 // Unicité: Un utilisateur ne peut faire qu'une demande vers un autre utilisateur spécifique
 schema.index({ requesterId: 1, addresseeId: 1 }, { unique: true });
+// Index pour accélérer le polling des demandes en attente et les filtres d'amitié
+schema.index({ addresseeId: 1, status: 1 });
+schema.index({ requesterId: 1, status: 1 });
 
 // Empêcher l'auto-amitié (Validation au niveau de Mongoose)
 schema.pre("validate", function () {

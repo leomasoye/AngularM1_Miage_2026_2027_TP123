@@ -26,6 +26,8 @@ const schema = new mongoose.Schema(
 
 // Unicité : une piste ne peut être partagée qu'une fois avec le même utilisateur
 schema.index({ trackId: 1, sharedWithId: 1 }, { unique: true });
+// Index pour accélérer la récupération des pistes partagées avec l'utilisateur
+schema.index({ sharedWithId: 1, createdAt: -1 });
 
 schema.methods.toPublic = function () {
   return {

@@ -17,11 +17,14 @@ router.get("/", auth, async (req, res, next) => {
   try {
     const userId = req.auth.sub;
 
-    // 1. Trouver les amis acceptés
-    const friendships = await Friendship.find({
-      $or: [{ requesterId: userId }, { addresseeId: userId }],
-      status: "accepted",
-    });
+    // 1 & 2. Trouver les amis acceptés et les pistes partagées en parallèle avec .lean()
+    const [friendships, shares] = await Promise.all([
+      Friendship.find({
+        $or: [{ requesterId: userId }, { addresseeId: userId }],
+        status: "accepted",
+      }).select("requesterId addresseeId").lean(),
+      Share.find({ sharedWithId: userId }).select("trackId").lean(),
+    ]);
 
     const friendIds = friendships.map((f) =>
       f.requesterId.toString() === userId ? f.addresseeId : f.requesterId
@@ -31,8 +34,6 @@ router.get("/", auth, async (req, res, next) => {
       return res.json({ items: [], hasMore: false, nextCursor: null });
     }
 
-    // 2. Trouver les pistes partagées avec l'utilisateur connecté
-    const shares = await Share.find({ sharedWithId: userId });
     const sharedTrackIds = shares.map((s) => s.trackId);
     const sharedTrackIdSet = new Set(sharedTrackIds.map((id) => id.toString()));
 
@@ -57,7 +58,8 @@ router.get("/", auth, async (req, res, next) => {
       .sort({ createdAt: -1 })
       .limit(limit + 1)
       .populate("ownerId", "name")
-      .select("-storedName");
+      .select("-storedName")
+      .lean();
 
     const hasMore = tracks.length > limit;
     const itemsSlice = hasMore ? tracks.slice(0, limit) : tracks;

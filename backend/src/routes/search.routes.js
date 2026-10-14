@@ -6,12 +6,16 @@ import { auth } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-// Rate limiter: maximum 30 recherches par minute
+// Rate limiter: maximum 60 recherches par minute
 const searchLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
-  max: 30,
+  max: 60,
   message: { message: "Trop de requêtes, veuillez patienter." },
 });
+
+// Cache mémoire court pour les requêtes de recherche fréquentes (TTL 20s)
+const searchCache = new Map();
+const SEARCH_CACHE_TTL = 20 * 1000;
 
 // Helper pour échapper les regex afin de prévenir les attaques ReDoS
 function escapeRegex(text) {
@@ -25,6 +29,12 @@ router.get("/", auth, searchLimiter, async (req, res, next) => {
 
     if (!q) {
       return res.json({ users: [], tracks: [] });
+    }
+
+    const cacheKey = `${type}:${q.toLowerCase()}`;
+    const cached = searchCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < SEARCH_CACHE_TTL) {
+      return res.json(cached.data);
     }
 
     const safeRegex = new RegExp(escapeRegex(q), "i");
@@ -68,6 +78,12 @@ router.get("/", auth, searchLimiter, async (req, res, next) => {
     }
 
     await Promise.all(promises);
+
+    searchCache.set(cacheKey, { data: results, timestamp: Date.now() });
+    if (searchCache.size > 100) {
+      const oldestKey = searchCache.keys().next().value;
+      if (oldestKey) searchCache.delete(oldestKey);
+    }
 
     res.json(results);
   } catch (error) {

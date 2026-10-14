@@ -173,3 +173,21 @@ a {
 .animate-in {
   animation: fadeInUp 0.4s var(--transition-normal) both;
 }
+
+// Transitions natives ultra-fluides entre pages (Angular View Transitions)
+::view-transition-old(root) {
+  animation: 100ms cubic-bezier(0.4, 0, 1, 1) both fadeOutView;
+}
+::view-transition-new(root) {
+  animation: 160ms cubic-bezier(0, 0, 0.2, 1) both fadeInView;
+}
+
+@keyframes fadeOutView {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes fadeInView {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

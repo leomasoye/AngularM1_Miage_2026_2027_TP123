@@ -34,6 +34,9 @@ const schema = new mongoose.Schema(
 
 // Cet index accélère la liste des pistes d'un utilisateur triées par date.
 schema.index({ ownerId: 1, createdAt: -1 });
+// Index pour le flux d'activité et la recherche de pistes publiques triées par date
+schema.index({ visibility: 1, createdAt: -1 });
+schema.index({ title: 1, visibility: 1 });
 
 /**
  * Convertit un document Mongoose en objet sûr pour le frontend.

@@ -22,6 +22,9 @@ const schema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// Index pour accélérer la recherche textuelle d'utilisateurs
+schema.index({ name: 1 });
+
 /**
  * Virtual property : `password` n'est pas stocké dans MongoDB.
  * Le setter conserve temporairement le mot de passe en mémoire pour que le

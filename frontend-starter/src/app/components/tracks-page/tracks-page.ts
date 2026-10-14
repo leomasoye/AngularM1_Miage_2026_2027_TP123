@@ -139,8 +139,17 @@ export class TracksPageComponent implements OnDestroy {
   }
 
   load(): void {
-    this.loading.set(true);
+    const cached = this.service.getCached(this.page(), this.limit());
+    if (cached) {
+      this.tracks.set(cached.items);
+      this.pages.set(cached.pages);
+      this.total.set(cached.total);
+      this.loading.set(false);
+    } else {
+      this.loading.set(true);
+    }
     this.error.set(null);
+
     this.service.list(this.page(), this.limit()).subscribe({
       next: (response) => {
         console.debug('[TracksPage] Pistes chargées', response.items.length);
@@ -151,7 +160,9 @@ export class TracksPageComponent implements OnDestroy {
       },
       error: (error) => {
         console.error('[TracksPage] Chargement impossible', error);
-        this.error.set(error?.error?.message || 'Impossible de charger la bibliothèque audio.');
+        if (!cached) {
+          this.error.set(error?.error?.message || 'Impossible de charger la bibliothèque audio.');
+        }
         this.loading.set(false);
       },
     });
@@ -215,13 +226,22 @@ export class TracksPageComponent implements OnDestroy {
   }
 
   toggleVisibility(track: Track): void {
-    const newVisibility = track.visibility === 'public' ? 'private' : 'public';
+    const oldVisibility = track.visibility;
+    const newVisibility = oldVisibility === 'public' ? 'private' : 'public';
+
+    // ⚡ Optimistic Update : retour visuel instantané
+    this.tracks.update(tracks => tracks.map(t => t.id === track.id ? { ...t, visibility: newVisibility } : t));
+    this.showSnackBar(`La piste est maintenant ${newVisibility === 'public' ? 'publique' : 'privée'}.`, 'success');
+
     this.service.updateVisibility(track.id, newVisibility).subscribe({
       next: (updatedTrack) => {
         this.tracks.update(tracks => tracks.map(t => t.id === updatedTrack.id ? updatedTrack : t));
-        this.showSnackBar(`La piste est maintenant ${newVisibility === 'public' ? 'publique' : 'privée'}.`, 'success');
       },
-      error: () => this.showSnackBar('Erreur lors de la modification de la visibilité.', 'error')
+      error: () => {
+        // Rollback si échec
+        this.tracks.update(tracks => tracks.map(t => t.id === track.id ? { ...t, visibility: oldVisibility } : t));
+        this.showSnackBar('Erreur lors de la modification de la visibilité.', 'error');
+      }
     });
   }
 
@@ -232,17 +252,24 @@ export class TracksPageComponent implements OnDestroy {
   deleteTrack(track: Track): void {
     if (!window.confirm(`Êtes-vous sûr de vouloir supprimer la piste "${track.title}" ?`)) return;
 
-    this.deletingTrackId.set(track.id);
+    const previousTracks = this.tracks();
+    // ⚡ Optimistic Update : suppression immédiate de l'écran
+    this.tracks.update(tracks => tracks.filter(t => t.id !== track.id));
+    this.total.update(tot => Math.max(0, tot - 1));
+    this.showSnackBar(`Piste "${track.title}" supprimée avec succès.`, 'success');
+    if (this.playingTrack()?.id === track.id) this.stop();
+
     this.service.delete(track.id).subscribe({
       next: () => {
-        this.deletingTrackId.set(null);
-        this.showSnackBar(`Piste "${track.title}" supprimée avec succès.`, 'success');
-        if (this.playingTrack()?.id === track.id) this.stop();
-        if (this.tracks().length === 1 && this.page() > 1) this.page.set(this.page() - 1);
-        this.load();
+        if (this.tracks().length === 0 && this.page() > 1) {
+          this.page.set(this.page() - 1);
+          this.load();
+        }
       },
       error: (error) => {
-        this.deletingTrackId.set(null);
+        // Rollback
+        this.tracks.set(previousTracks);
+        this.total.update(tot => tot + 1);
         const message = error?.error?.message || 'Erreur lors de la suppression de la piste.';
         this.showSnackBar(message, 'error');
         if (error.status === 404 || error.status === 403) this.load();

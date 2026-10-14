@@ -4,7 +4,7 @@
     <h1 class="text-display">Rechercher</h1>
     
     <div style="margin-top: 1.5rem; max-width: 600px; display: flex; gap: 1rem;">
-      <input #searchInput type="text" [value]="query()" (keyup.enter)="updateQuery(searchInput.value)" placeholder="Titres, Artistes, Amis..." class="search-input" style="flex: 1; padding: 1rem; border-radius: var(--radius-full); border: 1px solid var(--border-subtle); background: var(--bg-surface); color: var(--text-primary); font-size: 1.1rem; outline: none; transition: border-color var(--transition-fast);">
+      <input #searchInput type="text" [value]="query()" (input)="onSearchInput($event)" (keyup.enter)="updateQuery(searchInput.value)" placeholder="Titres, Artistes, Amis..." class="search-input" style="flex: 1; padding: 1rem; border-radius: var(--radius-full); border: 1px solid var(--border-subtle); background: var(--bg-surface); color: var(--text-primary); font-size: 1.1rem; outline: none; transition: border-color var(--transition-fast);">
       <button mat-flat-button class="btn-primary" (click)="updateQuery(searchInput.value)" style="border-radius: var(--radius-full); padding: 0 2rem;">
         <mat-icon>search</mat-icon>
       </button>

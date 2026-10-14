@@ -1,6 +1,9 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { MatButtonModule } from '@angular/material/button';
 import { FriendsService } from '../../shared/services/friends.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -31,7 +34,32 @@ export class SearchResultsComponent implements OnInit {
   private readonly searchService = inject(SearchService);
   private readonly friendsService = inject(FriendsService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly destroyRef = inject(DestroyRef);
   readonly player = inject(PlayerService);
+
+  private readonly searchSubject = new Subject<string>();
+
+  readonly query = signal('');
+  readonly loading = signal(false);
+  readonly results = signal<SearchResults>({ users: [], tracks: [] });
+  readonly error = signal('');
+
+  constructor() {
+    this.searchSubject
+      .pipe(
+        debounceTime(250),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((val) => {
+        const trimmed = val.trim();
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { q: trimmed || null },
+          queryParamsHandling: 'merge'
+        });
+      });
+  }
 
   play(track: any): void {
     if (this.player.currentTrack()?.id === track.id) {
@@ -53,10 +81,11 @@ export class SearchResultsComponent implements OnInit {
     });
   }
 
-  readonly query = signal('');
-  readonly loading = signal(false);
-  readonly results = signal<SearchResults>({ users: [], tracks: [] });
-  readonly error = signal('');
+  onSearchInput(event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    this.query.set(val);
+    this.searchSubject.next(val);
+  }
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
@@ -71,10 +100,11 @@ export class SearchResultsComponent implements OnInit {
   }
 
   updateQuery(newQuery: string) {
-    if (!newQuery.trim()) return;
+    const trimmed = newQuery.trim();
+    this.query.set(trimmed);
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { q: newQuery.trim() },
+      queryParams: { q: trimmed || null },
       queryParamsHandling: 'merge'
     });
   }

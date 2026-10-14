@@ -98,6 +98,7 @@ router.get("/avatar/:filename", (req, res) => {
     return res.status(404).json({ message: "Avatar introuvable" });
   }
 
+  res.setHeader("Cache-Control", "public, max-age=86400, immutable");
   res.sendFile(filePath);
 });
 

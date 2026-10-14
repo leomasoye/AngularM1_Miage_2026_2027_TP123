@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, OnDestroy, signal } from '@angular/core';
+import { computed, inject, Injectable, NgZone, OnDestroy, signal } from '@angular/core';
 import { AuthService } from './auth.service';
 import { Track } from '../models/track.model';
 
@@ -9,6 +9,7 @@ export type EQPreset = 'flat' | 'bass-boost' | 'vocal' | 'electronic' | 'custom'
 })
 export class PlayerService implements OnDestroy {
   private readonly auth = inject(AuthService);
+  private readonly ngZone = inject(NgZone);
 
   private audio?: HTMLAudioElement;
   private audioCtx?: AudioContext;
@@ -83,7 +84,9 @@ export class PlayerService implements OnDestroy {
       this.audio = new Audio();
       this.audio.crossOrigin = 'anonymous';
       this.audio.preload = 'metadata';
-      this.setupAudioListeners();
+      this.ngZone.runOutsideAngular(() => {
+        this.setupAudioListeners();
+      });
     }
   }
 

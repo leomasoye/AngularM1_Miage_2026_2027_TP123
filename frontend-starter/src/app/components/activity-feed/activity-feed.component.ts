@@ -55,7 +55,16 @@ export class ActivityFeedComponent implements OnInit {
   }
 
   loadInitialActivity(): void {
-    this.loading.set(true);
+    const cached = this.activityService.getCachedActivity();
+    if (cached) {
+      this.activities.set(cached.items);
+      this.hasMore.set(cached.hasMore);
+      this.nextCursor.set(cached.nextCursor);
+      this.loading.set(false);
+    } else {
+      this.loading.set(true);
+    }
+
     this.activityService.getActivity().subscribe({
       next: (res) => {
         this.activities.set(res.items);
@@ -64,9 +73,11 @@ export class ActivityFeedComponent implements OnInit {
         this.loading.set(false);
       },
       error: () => {
-        this.snackBar.open("Erreur lors du chargement du fil d'activité", "Fermer", {
-          duration: 3000,
-        });
+        if (!cached) {
+          this.snackBar.open("Erreur lors du chargement du fil d'activité", "Fermer", {
+            duration: 3000,
+          });
+        }
         this.loading.set(false);
       },
     });

@@ -19,7 +19,10 @@ router.get("/", auth, async (req, res, next) => {
     const userId = req.auth.sub;
     const friendships = await Friendship.find({
       $or: [{ requesterId: userId }, { addresseeId: userId }]
-    }).populate("requesterId", "name").populate("addresseeId", "name");
+    })
+      .populate("requesterId", "name")
+      .populate("addresseeId", "name")
+      .lean();
 
     const mapped = friendships.map(f => {
       const isRequester = f.requesterId._id.toString() === userId;
@@ -46,7 +49,9 @@ router.get("/pending", auth, async (req, res, next) => {
     const pending = await Friendship.find({
       addresseeId: userId,
       status: "pending"
-    }).populate("requesterId", "name");
+    })
+      .populate("requesterId", "name")
+      .lean();
 
     const items = pending.map(f => ({
       id: String(f._id),
