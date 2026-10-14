@@ -172,7 +172,73 @@ Transformer le prototype de gestion de pistes en application musicale sociale (t
 - Upload, distribution sécurisée et suppression d'avatar opérationnels côté backend et frontend.
 - File d'attente interactive, affichage dans un panneau slide-up glassmorphic, réordonnable/supprimable, enchaînement automatique dès la fin du morceau (`ended`).
 - Contrôles Shuffle, Repeat, Next, Previous pleinement fonctionnels.
-- 100% des tests backend (9/9 passés) et frontend (37/37 passés across 13 suites) au vert, build de production propre (`ng build` code 0).
+100% des tests backend (9/9 passés) et frontend (37/37 passés across 13 suites) au vert, build de production propre (`ng build` code 0).
+
+---
+
+## Étape 8 : Waveform Interactive (Forme d'onde décodée sur toute la piste) 📋 [À VENIR]
+**Goal:** Remplacer la simple barre de progression par une véritable forme d'onde décodée (type SoundCloud / Spotify Canvas) avec curseur interactif.
+
+#### [MODIFY] Frontend `PlayerService`
+- Décodage audio complet via `AudioContext.decodeAudioData()` lors du chargement de la piste.
+- Extraction d'un tableau d'amplitudes normalisées (ex: 120 barres de crêtes).
+- Signal réactif `waveformPeaks = signal<number[]>([])`.
+
+#### [NEW] Frontend `WaveformComponent`
+- Canvas HTML5 responsive dessinant les barres de la forme d'onde avec dégradé From Zero (`#9b3fd4` vers `#1a7fe8`).
+- Distinction visuelle entre la partie déjà lue (barres illuminées) et la partie à venir (barres semi-transparentes).
+- Curseur de survol avec affichage de la position temporelle (`hoverTime`).
+- Clic et glisser (scrubbing) pour naviguer instantanément dans le morceau.
+
+**Risques:** Temps de décodage audio sur les fichiers volumineux.
+**DoD attendue:** La forme d'onde réelle du fichier audio s'affiche dans le lecteur, le clic navigue instantanément dans le morceau avec une fluidité à 60 FPS.
+
+---
+
+## Étape 9 : Effets Audio Avancés (Reverb "Concert Hall" & Delay / Écho) 📋 [À VENIR]
+**Goal:** Permettre à l'utilisateur d'ajouter des effets de spatialisation et d'ambiance en temps réel.
+
+#### [MODIFY] Frontend `PlayerService` (Graphe Web Audio)
+- Intégration d'un `ConvolverNode` avec réponse impulsionnelle synthétique générée algorithmiquement (simulation d'une salle de concert ou d'un stade).
+- Intégration d'un `DelayNode` avec boucle de feedback (`GainNode`) pour un écho synchronisé.
+- Nouveaux signaux réactifs : `reverbWet = signal(0)`, `delayTime = signal(0.3)`, `delayFeedback = signal(0)`.
+
+#### [MODIFY] Frontend `EqualizerComponent`
+- Ajout d'une section "Effets Spatiaux" dans la modale d'égaliseur.
+- Potentiomètres rotatifs (knobs tactiles/cliquables) ou curseurs d'intensité pour le dosage du Reverb et du Delay.
+- Présélection de presets d'ambiance : "Studio Neutre", "Club Intimiste", "Stade Rock".
+
+**DoD attendue:** L'activation de la reverb et du delay modifie audiblement le son en direct sans craquement ni saturation.
+
+---
+
+## Étape 10 : Playlists Personnalisées (Création & Gestion Sociale) 📋 [À VENIR]
+**Goal:** Organiser des sélections musicales et partager des playlists entre amis.
+
+#### [NEW] Backend `models/Playlist.js` & `routes/playlist.routes.js`
+- Modèle `Playlist` : `name`, `description`, `ownerId`, `tracks: [ObjectId]`, `visibility: 'public' | 'private'`.
+- Routes CRUD complètes : `GET /api/playlists`, `POST /api/playlists`, `GET /api/playlists/:id`, `PATCH /api/playlists/:id`, `DELETE /api/playlists/:id`, `POST /api/playlists/:id/tracks/:trackId`, `DELETE /api/playlists/:id/tracks/:trackId`.
+- Contrôle d'accès strict : une playlist privée n'est accessible qu'à son créateur ou aux amis avec qui elle est partagée.
+
+#### [NEW] Frontend `PlaylistsPageComponent` & `AddToPlaylistModalComponent`
+- Page de consultation et de gestion des playlists avec bouton "Nouvelle playlist".
+- Bouton "Ajouter à une playlist" sur les cartes de pistes.
+- Possibilité de charger toute une playlist en un clic dans la file d'attente (`addMultipleToQueue`).
+
+**DoD attendue:** Création, édition, ajout de pistes et lecture d'une playlist complète opérationnelles côté backend et frontend.
+
+---
+
+## Étape 11 : Arrière-plan Audio-Réactif & Particules (Immersion Visuelle) 📋 [À VENIR]
+**Goal:** Créer une ambiance visuelle vivante où l'interface respire au rythme de la musique.
+
+#### [NEW] Frontend `AudioReactiveGlowComponent` ou directive
+- Récupération de l'énergie des basses (basses fréquences 20-120 Hz) via `AnalyserNode.getByteFrequencyData()`.
+- Lissage temporel (smoothing) pour éviter les scintillements brusques.
+- Animation subtile des halos lumineux d'arrière-plan (bloom orchidée/bleu) synchronisée avec le kick et la basse.
+- Option de désactivation dans les paramètres pour les utilisateurs sensibles ou soucieux de la batterie.
+
+**DoD attendue:** L'arrière-plan pulse subtilement et élégamment au rythme des basses sans aucun impact négatif sur les performances de l'application (60 FPS constant).
 
 ---
 
