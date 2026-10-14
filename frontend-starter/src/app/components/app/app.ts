@@ -7,10 +7,11 @@ import { fromEvent, of, timer } from 'rxjs';
 import { catchError, filter, switchMap } from 'rxjs/operators';
 
 import { PlayerBarComponent } from '../player-bar/player-bar.component';
+import { AvatarComponent } from '../../shared/components/avatar/avatar.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, PlayerBarComponent],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, PlayerBarComponent, AvatarComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })

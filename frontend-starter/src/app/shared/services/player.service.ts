@@ -51,6 +51,12 @@ export class PlayerService implements OnDestroy {
   readonly treble = signal(0);
   readonly currentPreset = signal<EQPreset>('flat');
 
+  // File d'attente (Queue), Shuffle et Répétition
+  readonly queue = signal<Track[]>([]);
+  readonly isShuffle = signal(false);
+  readonly repeatMode = signal<'none' | 'one' | 'all'>('none');
+  readonly history = signal<Track[]>([]);
+
   // Signal dérivé pour formater le temps actuel et la durée
   readonly formattedCurrentTime = computed(() => this.formatTime(this.currentTime()));
   readonly formattedDuration = computed(() => this.formatTime(this.duration()));
@@ -229,9 +235,18 @@ export class PlayerService implements OnDestroy {
     });
 
     this.audio.addEventListener('ended', () => {
-      this.isPlaying.set(false);
-      this.currentTime.set(0);
-      this.progress.set(0);
+      if (this.repeatMode() === 'one') {
+        if (this.audio) {
+          this.audio.currentTime = 0;
+          void this.audio.play();
+        }
+      } else if (this.queue().length > 0 || (this.repeatMode() === 'all' && this.history().length > 0)) {
+        void this.playNext();
+      } else {
+        this.isPlaying.set(false);
+        this.currentTime.set(0);
+        this.progress.set(0);
+      }
     });
 
     this.audio.addEventListener('error', () => {
@@ -260,6 +275,11 @@ export class PlayerService implements OnDestroy {
     }
     await this.resumeContext();
 
+    const previous = this.currentTrack();
+    if (previous && previous.id !== track.id) {
+      this.history.update((h) => [...h, previous]);
+    }
+
     this.error.set(null);
     this.isLoading.set(true);
     this.currentTrack.set(track);
@@ -279,6 +299,90 @@ export class PlayerService implements OnDestroy {
         this.isLoading.set(false);
       }
     }
+  }
+
+  // --- Gestion de la file d'attente (Queue) et navigation ---
+
+  addToQueue(track: Track): void {
+    this.queue.update((q) => [...q, track]);
+  }
+
+  addMultipleToQueue(tracks: Track[]): void {
+    this.queue.update((q) => [...q, ...tracks]);
+  }
+
+  removeFromQueue(index: number): void {
+    this.queue.update((q) => q.filter((_, i) => i !== index));
+  }
+
+  clearQueue(): void {
+    this.queue.set([]);
+  }
+
+  async playNext(): Promise<void> {
+    const currentQ = this.queue();
+    if (currentQ.length > 0) {
+      let nextIndex = 0;
+      if (this.isShuffle()) {
+        nextIndex = Math.floor(Math.random() * currentQ.length);
+      }
+      const nextTrack = currentQ[nextIndex];
+      this.queue.set(currentQ.filter((_, i) => i !== nextIndex));
+      await this.playTrack(nextTrack);
+    } else if (this.repeatMode() === 'all' && this.history().length > 0) {
+      // Reboucler sur la liste d'historique
+      const allTracks = [...this.history()];
+      const current = this.currentTrack();
+      if (current) {
+        allTracks.push(current);
+      }
+      const first = allTracks.shift()!;
+      this.queue.set(allTracks);
+      this.history.set([]);
+      await this.playTrack(first);
+    } else {
+      this.isPlaying.set(false);
+      this.currentTime.set(0);
+      this.progress.set(0);
+    }
+  }
+
+  async playPrevious(): Promise<void> {
+    // Si la piste est entamée depuis plus de 3s, on recommence la piste
+    if (this.currentTime() > 3) {
+      this.seekPercent(0);
+      if (this.audio) {
+        this.audio.currentTime = 0;
+      }
+      return;
+    }
+
+    const hist = this.history();
+    if (hist.length > 0) {
+      const prevTrack = hist[hist.length - 1];
+      this.history.set(hist.slice(0, -1));
+      const current = this.currentTrack();
+      if (current) {
+        this.queue.update((q) => [current, ...q]);
+      }
+      await this.playTrack(prevTrack);
+    } else {
+      this.seekPercent(0);
+      if (this.audio) {
+        this.audio.currentTime = 0;
+      }
+    }
+  }
+
+  toggleShuffle(): void {
+    this.isShuffle.update((s) => !s);
+  }
+
+  toggleRepeat(): void {
+    const modes: ('none' | 'all' | 'one')[] = ['none', 'all', 'one'];
+    const current = this.repeatMode();
+    const nextIndex = (modes.indexOf(current) + 1) % modes.length;
+    this.repeatMode.set(modes[nextIndex]);
   }
 
   async togglePlay(): Promise<void> {

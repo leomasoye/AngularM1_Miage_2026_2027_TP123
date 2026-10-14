@@ -137,7 +137,83 @@ Le projet a ete segmente en missions logiques afin d assurer un developpement it
 - On peut accepter ou refuser une demande dans l'onglet "Amis".
 - Les clics sur le bouton "J'aime" s'affichent instantanément sans lag (Optimistic update) et mettent à jour la base MongoDB.
 
-*(La suite de ce rapport sera complétée au fur et à mesure de l'implémentation, détaillant les fonctionnalités réalisées, les tests exécutés et les difficultés rencontrées).*
+---
+
+## 7. Réalisation - Étape 4 : Partage de pistes & Fil d'activité
+*Date d'implémentation : 2026*
+
+**Objectif** : Partager des pistes privées entre amis acceptés et visualiser le flux d'actualité chronologique avec pagination par curseur et polling.
+
+**Travail réalisé** :
+- **Backend - Modèle `Share` & Cascade** :
+  - Création de `models/Share.js` avec index composé unique `(trackId, sharedWithId)`.
+  - Routes `POST /api/tracks/:id/share/:userId` et `DELETE /api/tracks/:id/share/:userId` réservées au propriétaire.
+  - Cascade : la suppression d'une amitié ou d'une piste supprime automatiquement les partages associés.
+  - Sécurisation du flux audio : `canAccessTrack` vérifie de manière asynchrone l'existence d'un `Share` valide.
+- **Backend - Fil d'activité** :
+  - Route `GET /api/activity` avec pagination par curseur de date (`?before=...`) filtrée sur les amis et les pistes partagées/publiques.
+  - Route `GET /api/friends/pending` pour le polling régulier du compteur d'invitations.
+- **Frontend** :
+  - `ShareModalComponent` : modale Material M3 élégante avec liste des amis et bascules instantanées de partage/départage.
+  - `ActivityFeedComponent` (route `/activity`) : flux chronologique avec infinite scroll / bouton "Charger plus".
+  - Polling intelligent toutes les 30s avec pause automatique lors du passage de l'onglet en arrière-plan (`visibilitychange`) et désinscription automatique via `takeUntilDestroyed()`.
+
+**Validation (DoD respecté)** :
+- Partage et arrêt de partage fonctionnels avec suppression en cascade.
+- Notification en badge rouge sur l'onglet Amis dans la barre latérale.
+
+---
+
+## 8. Réalisation - Étape 5 & 6 : Lecteur Web Audio Avancé & Égaliseur
+*Date d'implémentation : 2026*
+
+**Objectif** : Mettre en place un lecteur audio persistant basé sur la Web Audio API avec visualiseur de spectre, VU-mètres stéréo et égaliseur 3 bandes.
+
+**Travail réalisé** :
+- **Backend - CORS Audio** :
+  - En-têtes `Access-Control-Allow-Origin: *` configurés sur `/api/tracks/:id/audio` pour permettre la connexion du flux au graphe Web Audio avec `crossOrigin="anonymous"`.
+- **Frontend - `PlayerService` (Singleton)** :
+  - Graphe audio complet : `MediaElementSourceNode` -> `LowShelf (100Hz)` -> `Peaking (1kHz)` -> `HighShelf (8kHz)` -> `GainNode` -> `StereoPannerNode` -> `ChannelSplitterNode` -> `AnalyserLeft` / `AnalyserRight` -> `Destination`.
+  - Sécurisation contre les restrictions d'autoplay des navigateurs (`AudioContext.resume()` déclenché lors du premier clic utilisateur).
+  - Découplage de la recherche temporelle (seeking) pour une manipulation fluide du slider sans saccades.
+- **Frontend - `EqualizerComponent` & Visualiseurs** :
+  - Égaliseur 3 bandes (Basses, Médiums, Aigus) avec sliders verticaux en dB (-12 dB à +12 dB) et 4 presets (Flat, Bass Boost, Vocal, Electronic), avec persistance dans le `localStorage`.
+  - Double VU-mètre stéréo (canaux gauche et droite) avec calcul RMS et indicateur de crête (peak decay).
+  - Oscilloscope et visualiseur FFT temps réel intégrés dans la barre de contrôle.
+  - Boucle d'animation `requestAnimationFrame` exécutée strictement en dehors de la zone Angular (`runOutsideAngular`) pour garantir un framerate stable à 60 FPS sans surcharger la détection de changement.
+
+**Validation (DoD respecté)** :
+- Visualiseur et VU-mètres stéréo synchronisés sur la musique sans blocage CORS.
+- Réglages EQ appliqués en temps réel et conservés entre les sessions.
+
+---
+
+## 9. Réalisation - Étape 7 : File d'attente (Queue), Contrôles complets & Avatar utilisateur
+*Date d'implémentation : 2026*
+
+**Objectif** : Fournir une expérience de lecture continue Spotify-like (file d'attente, autoplay next, shuffle, repeat) et enrichir l'identité sociale utilisateur (upload d'avatar avec dégradé From Zero).
+
+**Travail réalisé** :
+- **Backend - Avatar utilisateur** :
+  - Ajout du champ `avatarUrl` dans le schéma Mongoose `User` et exposition dans `toPublic()`.
+  - Configuration de Multer dans `middleware/avatar-upload.middleware.js` (taille max 5 Mo, validation MIME JPEG, PNG, WEBP).
+  - Routes `PUT /api/users/me/avatar`, `GET /api/users/avatar/:filename` et `DELETE /api/users/me/avatar` avec nettoyage des anciens fichiers sur disque.
+- **Frontend - File d'attente & Enchaînement automatique** :
+  - Extension de `PlayerService` avec les signaux `queue`, `isShuffle`, `repeatMode` (`none`, `all`, `one`), et `history`.
+  - Méthodes `addToQueue`, `removeFromQueue`, `clearQueue`, `playNext`, `playPrevious`, `toggleShuffle`, `toggleRepeat`.
+  - Écouteur natif `ended` : passage automatique au morceau suivant dans la file, gestion du bouclage infini ou de la répétition d'une seule piste.
+- **Frontend - Composants UI** :
+  - `AvatarComponent` : composant autonome réutilisable (tailles `sm`, `md`, `lg`, `xl`) avec bordure dégradée From Zero (`#9b3fd4` / `#1a7fe8`), initiales dynamiques et gestion des erreurs de chargement.
+  - Panneau déroulant `Queue Drawer` dans `PlayerBarComponent` affichant la piste en cours et la liste d'attente réordonnable avec bouton pour vider la file.
+  - Bouton d'action "Ajouter à la file d'attente" (`playlist_add`) sur les cartes de pistes dans la bibliothèque, le fil d'actualité et la recherche.
+  - Intégration de l'upload d'avatar dans `ProfilePageComponent` et affichage dans la barre latérale `AppComponent`.
+
+**Validation (DoD respecté)** :
+- 9 tests unitaires backend passés (100%).
+- 37 tests unitaires frontend passés (13 suites, 100%).
+- Compilation de production `ng build` sans aucune erreur ni avertissement bloquant.
+
+
 
 
 

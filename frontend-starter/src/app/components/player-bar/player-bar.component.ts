@@ -5,6 +5,7 @@ import {
   NgZone,
   OnDestroy,
   OnInit,
+  signal,
   viewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -13,6 +14,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { PlayerService } from '../../shared/services/player.service';
+import { Track } from '../../shared/models/track.model';
 import { LikeButtonComponent } from '../like-button/like-button';
 import { EqualizerComponent } from '../equalizer/equalizer.component';
 
@@ -37,7 +39,22 @@ export class PlayerBarComponent implements OnInit, OnDestroy {
 
   readonly canvasRef = viewChild<ElementRef<HTMLCanvasElement>>('visualizerCanvas');
 
+  readonly isQueueOpen = signal(false);
+
   private animationFrameId: number | null = null;
+
+  toggleQueue(): void {
+    this.isQueueOpen.update((open) => !open);
+  }
+
+  closeQueue(): void {
+    this.isQueueOpen.set(false);
+  }
+
+  playQueuedTrack(track: Track, index: number): void {
+    this.player.removeFromQueue(index);
+    void this.player.playTrack(track);
+  }
 
   ngOnInit(): void {
     this.startVisualizer();

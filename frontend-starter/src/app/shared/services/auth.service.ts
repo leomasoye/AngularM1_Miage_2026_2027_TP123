@@ -39,6 +39,20 @@ export class AuthService {
       .pipe(tap((user) => this.currentUser.set(user)));
   }
 
+  uploadAvatar(file: File) {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    return this.http
+      .put<User>('/api/users/me/avatar', formData)
+      .pipe(tap((user) => this.currentUser.set(user)));
+  }
+
+  deleteAvatar() {
+    return this.http
+      .delete<User>('/api/users/me/avatar')
+      .pipe(tap((user) => this.currentUser.set(user)));
+  }
+
   logout(): void {
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('gpc_token');

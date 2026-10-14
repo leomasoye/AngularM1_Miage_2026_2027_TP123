@@ -38,9 +38,7 @@
             >
               <div class="card-top">
                 <div class="user-meta">
-                  <div class="user-avatar">
-                    {{ (track.ownerName || 'A').charAt(0).toUpperCase() }}
-                  </div>
+                  <app-avatar [name]="track.ownerName" size="sm"></app-avatar>
                   <div>
                     <span class="user-name">{{ track.ownerName }}</span>
                     <span class="action-desc text-muted">
@@ -91,6 +89,13 @@
                 </div>
 
                 <div class="track-actions">
+                  <button
+                    mat-icon-button
+                    (click)="addToQueue(track)"
+                    title="Ajouter à la file d'attente"
+                  >
+                    <mat-icon>playlist_add</mat-icon>
+                  </button>
                   <app-like-button
                     [track]="track"
                     (trackUpdated)="onTrackLiked($event)"

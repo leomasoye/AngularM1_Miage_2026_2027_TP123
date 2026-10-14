@@ -10,6 +10,7 @@ import { TrackService } from "../../shared/services/track.service";
 import { PlayerService } from "../../shared/services/player.service";
 import { ActivityTrack } from "../../shared/models/activity.model";
 import { LikeButtonComponent } from "../like-button/like-button";
+import { AvatarComponent } from "../../shared/components/avatar/avatar.component";
 import { fromEvent, timer } from "rxjs";
 import { filter } from "rxjs/operators";
 
@@ -22,6 +23,7 @@ import { filter } from "rxjs/operators";
     MatIconModule,
     MatProgressSpinnerModule,
     LikeButtonComponent,
+    AvatarComponent,
   ],
   templateUrl: "./activity-feed.component.html",
   styleUrl: "./activity-feed.component.css",
@@ -142,6 +144,14 @@ export class ActivityFeedComponent implements OnInit {
     } else {
       void this.player.playTrack(track as any);
     }
+  }
+
+  addToQueue(track: ActivityTrack): void {
+    this.player.addToQueue(track as any);
+    this.snackBar.open(`"${track.title}" ajouté à la file d'attente.`, 'Fermer', {
+      duration: 3000,
+      panelClass: ['snackbar-success'],
+    });
   }
 
   stop(): void {

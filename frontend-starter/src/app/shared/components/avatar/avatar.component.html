@@ -1,0 +1,18 @@
+<div
+  class="avatar-container size-{{ size() }}"
+  [title]="effectiveName()"
+  [attr.aria-label]="effectiveName()"
+>
+  @if (effectiveAvatarUrl(); as url) {
+    <img
+      [src]="url"
+      [alt]="effectiveName()"
+      class="avatar-img"
+      (error)="onImageError()"
+    />
+  } @else {
+    <div class="avatar-initials">
+      {{ initials() }}
+    </div>
+  }
+</div>

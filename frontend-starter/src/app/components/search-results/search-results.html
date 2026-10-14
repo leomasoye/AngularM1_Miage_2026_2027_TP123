@@ -37,6 +37,13 @@
                 <div class="text-small text-muted">Par {{ track.ownerName }}</div>
               </div>
               <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <button
+                  mat-icon-button
+                  (click)="addToQueue(track)"
+                  title="Ajouter à la file d'attente"
+                >
+                  <mat-icon>playlist_add</mat-icon>
+                </button>
                 <app-like-button [track]="track"></app-like-button>
                 <button
                   mat-icon-button
@@ -64,10 +71,10 @@
           @for (user of results().users; track user.id) {
             <div class="user-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border-radius: var(--radius-sm); background: var(--bg-surface); border: 1px solid rgba(255,255,255,0.05);">
               <div style="display: flex; align-items: center; gap: 1rem;">
-                <mat-icon style="color: var(--text-muted);">account_circle</mat-icon>
+                <app-avatar [name]="user.name" size="sm"></app-avatar>
                 <div class="text-body" style="font-weight: 600;">{{ user.name }}</div>
               </div>
-<button mat-icon-button color="primary" (click)="addFriend(user.id)" title="Ajouter en ami"><mat-icon>person_add</mat-icon></button>
+              <button mat-icon-button color="primary" (click)="addFriend(user.id)" title="Ajouter en ami"><mat-icon>person_add</mat-icon></button>
             </div>
           } @empty {
             <p class="text-muted text-center" style="padding: 1rem;">Aucun utilisateur trouvé.</p>

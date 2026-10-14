@@ -147,14 +147,45 @@ Transformer le prototype de gestion de pistes en application musicale sociale (t
 
 ---
 
+## Étape 7 : File de lecture (Queue), Contrôles de lecture (Next/Prev, Shuffle, Repeat) & Avatar utilisateur (Polish UX) ✅ [TERMINÉE]
+**Goal:** Offrir une expérience d'écoute continue complète (file d'attente, autoplay next, shuffle, repeat) et enrichir l'identité sociale utilisateur (upload d'avatar avec dégradé From Zero).
+
+#### [NEW] Backend `models/User.js` & `routes/user.routes.js`
+- Champ `avatarUrl: { type: String, default: null }` sur `User`.
+- `PUT /api/users/me/avatar` : upload d'avatar avec Multer (max 5 Mo, jpeg/png/webp) stocké dans `uploads/avatars/`.
+- `GET /api/users/avatar/:filename` : distribution sécurisée des avatars.
+- `DELETE /api/users/me/avatar` : suppression de l'avatar et remise à `null`.
+
+#### [MODIFY] Frontend `PlayerService`
+- Signals réactifs : `queue = signal<Track[]>([])`, `isShuffle = signal<boolean>(false)`, `repeatMode = signal<'none' | 'one' | 'all'>('none')`, `history = signal<Track[]>([])`.
+- Méthodes : `addToQueue(track)`, `removeFromQueue(index)`, `clearQueue()`, `playNext()`, `playPrevious()`, `toggleShuffle()`, `toggleRepeat()`.
+- Enchaînement automatique : écouteur de l'événement natif `ended` pour basculer automatiquement sur la piste suivante (ou rejouer selon `repeatMode`).
+
+#### [NEW] Frontend `AvatarComponent` & `QueueDrawerComponent`
+- `AvatarComponent` : Composant réutilisable (tailles `sm`, `md`, `lg`) affichant l'image avec bordure dégradée From Zero (`#9b3fd4` / `#1a7fe8`) ou initiales dynamiques avec fallback automatique.
+- `PlayerBarComponent` : Ajout des boutons `Shuffle` (🔀), `Précédent` (⏮), `Suivant` (⏭), `Répéter` (🔁 none/all/one), et `File d'attente` (📑 avec badge de compteur).
+- Bouton d'action "Ajouter à la file d'attente" (`playlist_add`) sur les cartes de pistes (`TracksPageComponent`, `ActivityFeedComponent`, `SearchResultsComponent`).
+- Page de profil (`ProfilePageComponent`) : zone d'upload d'avatar avec prévisualisation et confirmation.
+- Sidebar (`AppComponent`) : intégration de l'avatar utilisateur.
+
+**DoD validée :**
+- Upload, distribution sécurisée et suppression d'avatar opérationnels côté backend et frontend.
+- File d'attente interactive, affichage dans un panneau slide-up glassmorphic, réordonnable/supprimable, enchaînement automatique dès la fin du morceau (`ended`).
+- Contrôles Shuffle, Repeat, Next, Previous pleinement fonctionnels.
+- 100% des tests backend (9/9 passés) et frontend (37/37 passés across 13 suites) au vert, build de production propre (`ng build` code 0).
+
+---
+
 ## Plan de Vérification
 
 ### Tests Automatisés (Mocha/Chai + Supertest)
 - **Modèles (Mongoose)** : Test de l'unicité des paires de `Friendship` et blocage de l'auto-amitié.
 - **Modèle d'Accès (Intégration/Supertest)** : Vérifier que `GET /api/tracks/:id/audio` retourne bien 404 pour un utilisateur non autorisé sur une piste privée. Vérifier que seul l'owner peut modifier `visibility` (sinon 403).
-- **Services (Jasmine/Jest)** : Tests du `PlayerService` (états play/pause) et `FriendsService` (comportement du timer de polling).
+- **Services (Jasmine/Jest)** : Tests du `PlayerService` (états play/pause, queue, shuffle, repeat) et `FriendsService` (comportement du timer de polling).
 
 ### Vérification Manuelle
 1. **Sécurité du Flux (Test critique)** : Ouvrir la session User A. Uploader une track privée. Copier l'URL réseau directe du flux audio. Ouvrir une fenêtre Incognito avec User B, coller l'URL. **Doit retourner 404**.
 2. **Partage cascade** : User A partage avec User B. User A supprime User B de ses amis. User B ne doit plus voir ni pouvoir écouter la track (404).
 3. **CORS & WebAudio** : Jouer une track, vérifier que les barres de fréquences s'animent. Si la ligne est plate (silence constant) et qu'il n'y a pas d'erreur console, c'est un échec CORS/cross-origin. Test à effectuer dès la fin de l'étape 5.
+4. **Queue & Auto-play** : Ajouter plusieurs morceaux à la file d'attente, avancer le curseur à la fin d'un morceau, vérifier que le morceau suivant démarre automatiquement. Tester les boutons Next, Previous, Shuffle et Repeat.
+5. **Avatar** : Téléverser une image de profil, vérifier l'apparition immédiate dans la sidebar et le profil, puis supprimer l'avatar pour vérifier le retour aux initiales.

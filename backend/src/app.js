@@ -37,7 +37,11 @@ export function createApp() {
   app.use((error, _req, res, next) => {
     console.error("[error] Erreur reçue par le gestionnaire central", error);
 
-    if (error instanceof multer.MulterError || error?.message === "Format audio non accepté") {
+    if (
+      error instanceof multer.MulterError ||
+      error?.message === "Format audio non accepté" ||
+      error?.message?.includes("Format d'image non accepté")
+    ) {
       return res.status(400).json({ message: error.message });
     }
     if (error?.name === "ValidationError") {

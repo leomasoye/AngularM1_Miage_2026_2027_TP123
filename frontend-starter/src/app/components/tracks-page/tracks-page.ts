@@ -267,6 +267,11 @@ export class TracksPageComponent implements OnDestroy {
     }
   }
 
+  addToQueue(track: Track): void {
+    this.player.addToQueue(track);
+    this.showSnackBar(`"${track.title}" ajouté à la file d'attente.`, 'success');
+  }
+
   stop(): void {
     this.player.stop();
   }

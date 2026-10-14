@@ -19,7 +19,10 @@
             ],
             "styles": [
               "src/styles.scss"
-            ]
+            ],
+            "optimization": {
+              "fonts": false
+            }
           },
           "configurations": {
             "development": {
@@ -27,13 +30,14 @@
               "extractLicenses": false,
               "sourceMap": true
             }
-          }
+          },
+          "defaultConfiguration": "development"
         },
         "serve": {
           "builder": "@angular/build:dev-server",
           "configurations": {
             "development": {
-              "buildTarget": "gpc:build"
+              "buildTarget": "gpc:build:development"
             }
           },
           "defaultConfiguration": "development"

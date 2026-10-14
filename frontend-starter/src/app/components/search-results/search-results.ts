@@ -9,11 +9,19 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { SearchService, SearchResults } from '../../shared/services/search.service';
 import { PlayerService } from '../../shared/services/player.service';
+import { AvatarComponent } from '../../shared/components/avatar/avatar.component';
 
 @Component({
   selector: 'app-search-results',
   standalone: true,
-  imports: [CommonModule, MatProgressSpinnerModule, MatIconModule, MatButtonModule, LikeButtonComponent],
+  imports: [
+    CommonModule,
+    MatProgressSpinnerModule,
+    MatIconModule,
+    MatButtonModule,
+    LikeButtonComponent,
+    AvatarComponent,
+  ],
   templateUrl: './search-results.html',
   styleUrl: './search-results.css'
 })
@@ -31,6 +39,11 @@ export class SearchResultsComponent implements OnInit {
     } else {
       void this.player.playTrack(track);
     }
+  }
+
+  addToQueue(track: any): void {
+    this.player.addToQueue(track);
+    this.snackBar.open(`"${track.title}" ajouté à la file d'attente.`, 'Fermer', { duration: 3000 });
   }
 
   addFriend(userId: string) {

@@ -1,4 +1,80 @@
 @if (player.currentTrack(); as track) {
+  <!-- Panneau déroulant de la file d'attente (Queue Drawer) -->
+  @if (isQueueOpen()) {
+    <div class="queue-backdrop" (click)="closeQueue()"></div>
+    <div class="queue-panel glass-elevated">
+      <div class="queue-header">
+        <div class="queue-title-wrapper">
+          <mat-icon class="queue-icon-title">queue_music</mat-icon>
+          <span class="queue-title">File d'attente</span>
+        </div>
+        <div class="queue-header-actions">
+          @if (player.queue().length > 0) {
+            <button type="button" class="btn-clear-queue" (click)="player.clearQueue()">
+              Vider
+            </button>
+          }
+          <button mat-icon-button class="btn-close-queue" (click)="closeQueue()" title="Fermer la file">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Morceau en cours de lecture -->
+      <div class="queue-section-heading">EN COURS DE LECTURE</div>
+      <div class="queue-track-item current-playing-item">
+        <div class="queue-track-cover">
+          <mat-icon class="eq-pulse-icon">graphic_eq</mat-icon>
+        </div>
+        <div class="queue-track-details">
+          <div class="queue-track-title" [title]="track.title">{{ track.title }}</div>
+          <div class="queue-track-artist">{{ track.ownerName || 'Piste audio' }}</div>
+        </div>
+        <span class="now-playing-tag">En lecture</span>
+      </div>
+
+      <!-- File d'attente -->
+      <div class="queue-section-heading">À SUIVRE ({{ player.queue().length }})</div>
+      @if (player.queue().length === 0) {
+        <div class="queue-empty-box">
+          <mat-icon class="empty-icon">playlist_add</mat-icon>
+          <p class="empty-text">Votre file d'attente est vide</p>
+          <span class="empty-hint">Cliquez sur l'icône + d'un morceau pour l'ajouter ici</span>
+        </div>
+      } @else {
+        <div class="queue-scroll-list">
+          @for (item of player.queue(); track item.id; let idx = $index) {
+            <div class="queue-track-item">
+              <span class="queue-position">{{ idx + 1 }}</span>
+              <div class="queue-track-details" (click)="playQueuedTrack(item, idx)">
+                <div class="queue-track-title" [title]="item.title">{{ item.title }}</div>
+                <div class="queue-track-artist">{{ item.ownerName || 'Piste' }}</div>
+              </div>
+              <div class="queue-item-buttons">
+                <button
+                  mat-icon-button
+                  class="btn-queue-action"
+                  (click)="playQueuedTrack(item, idx)"
+                  title="Lire immédiatement"
+                >
+                  <mat-icon>play_arrow</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  class="btn-queue-action btn-remove"
+                  (click)="player.removeFromQueue(idx)"
+                  title="Retirer de la file"
+                >
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
   <div class="player-bar glass-elevated">
     <!-- Section Gauche : Métadonnées de la piste -->
     <div class="track-info">
@@ -15,6 +91,28 @@
     <!-- Section Centrale : Contrôles & Barre de progression -->
     <div class="player-center">
       <div class="player-controls">
+        <!-- Lecture aléatoire (Shuffle) -->
+        <button
+          mat-icon-button
+          class="btn-control-secondary"
+          [class.active-mode]="player.isShuffle()"
+          (click)="player.toggleShuffle()"
+          [title]="player.isShuffle() ? 'Lecture aléatoire : activée' : 'Lecture aléatoire : désactivée'"
+        >
+          <mat-icon>shuffle</mat-icon>
+        </button>
+
+        <!-- Morceau précédent -->
+        <button
+          mat-icon-button
+          class="btn-control-secondary"
+          (click)="player.playPrevious()"
+          title="Morceau précédent"
+        >
+          <mat-icon>skip_previous</mat-icon>
+        </button>
+
+        <!-- Reculer de 5s -->
         <button
           mat-icon-button
           class="btn-control-secondary"
@@ -24,6 +122,7 @@
           <mat-icon>replay_5</mat-icon>
         </button>
 
+        <!-- Play / Pause -->
         <button
           mat-icon-button
           class="btn-play-pause"
@@ -39,6 +138,7 @@
           }
         </button>
 
+        <!-- Avancer de 5s -->
         <button
           mat-icon-button
           class="btn-control-secondary"
@@ -46,6 +146,29 @@
           title="Avancer de 5s"
         >
           <mat-icon>forward_5</mat-icon>
+        </button>
+
+        <!-- Morceau suivant -->
+        <button
+          mat-icon-button
+          class="btn-control-secondary"
+          (click)="player.playNext()"
+          title="Morceau suivant"
+        >
+          <mat-icon>skip_next</mat-icon>
+        </button>
+
+        <!-- Répétition (Repeat: None -> All -> One) -->
+        <button
+          mat-icon-button
+          class="btn-control-secondary"
+          [class.active-mode]="player.repeatMode() !== 'none'"
+          (click)="player.toggleRepeat()"
+          [title]="player.repeatMode() === 'one' ? 'Répéter le morceau en boucle' : player.repeatMode() === 'all' ? 'Répéter toute la liste' : 'Répétition désactivée'"
+        >
+          <mat-icon>
+            {{ player.repeatMode() === 'one' ? 'repeat_one' : 'repeat' }}
+          </mat-icon>
         </button>
       </div>
 
@@ -68,11 +191,25 @@
       </div>
     </div>
 
-    <!-- Section Droite : VU/Visualiseur, Volume & Égaliseur -->
+    <!-- Section Droite : VU/Visualiseur, File d'attente, Volume & Égaliseur -->
     <div class="player-right">
       <div class="visualizer-wrapper" title="Spectre FFT & VU-mètres Stéréo (L/R)">
         <canvas #visualizerCanvas width="140" height="28"></canvas>
       </div>
+
+      <!-- Bouton File d'attente -->
+      <button
+        mat-icon-button
+        class="btn-queue"
+        [class.active-mode]="isQueueOpen()"
+        (click)="toggleQueue()"
+        title="Ouvrir la file d'attente"
+      >
+        <mat-icon>queue_music</mat-icon>
+        @if (player.queue().length > 0) {
+          <span class="queue-counter">{{ player.queue().length }}</span>
+        }
+      </button>
 
       <div class="volume-control">
         <button

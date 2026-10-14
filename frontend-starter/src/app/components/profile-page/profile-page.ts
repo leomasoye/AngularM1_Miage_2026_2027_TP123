@@ -8,6 +8,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
+import { AvatarComponent } from '../../shared/components/avatar/avatar.component';
 
 @Component({
   imports: [
@@ -17,7 +18,8 @@ import { MatIconModule } from '@angular/material/icon';
     MatProgressSpinnerModule,
     MatFormFieldModule,
     MatInputModule,
-    MatIconModule
+    MatIconModule,
+    AvatarComponent,
   ],
   templateUrl: './profile-page.html',
   styleUrl: './profile-page.css',
@@ -28,6 +30,7 @@ export class ProfilePageComponent implements OnInit {
 
   readonly isLoading = signal(false);
   readonly isSaving = signal(false);
+  readonly isUploadingAvatar = signal(false);
   readonly error = signal('');
   readonly success = signal('');
 
@@ -76,6 +79,55 @@ export class ProfilePageComponent implements OnInit {
         this.isSaving.set(false);
         this.error.set(err.error?.message ?? 'Impossible de mettre à jour le profil');
       }
+    });
+  }
+
+  onAvatarSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    if (file.size > 5 * 1024 * 1024) {
+      this.error.set("L'image dépasse la taille maximale autorisée de 5 Mo.");
+      return;
+    }
+
+    this.isUploadingAvatar.set(true);
+    this.error.set('');
+    this.success.set('');
+
+    this.auth.uploadAvatar(file).subscribe({
+      next: () => {
+        this.isUploadingAvatar.set(false);
+        this.success.set('Photo de profil mise à jour avec succès.');
+        setTimeout(() => this.success.set(''), 3000);
+        input.value = '';
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.isUploadingAvatar.set(false);
+        this.error.set(err.error?.message ?? "Erreur lors de l'envoi de la photo");
+        input.value = '';
+      },
+    });
+  }
+
+  deleteAvatar(): void {
+    if (!window.confirm('Voulez-vous vraiment supprimer votre photo de profil ?')) return;
+
+    this.isUploadingAvatar.set(true);
+    this.error.set('');
+    this.success.set('');
+
+    this.auth.deleteAvatar().subscribe({
+      next: () => {
+        this.isUploadingAvatar.set(false);
+        this.success.set('Photo de profil supprimée.');
+        setTimeout(() => this.success.set(''), 3000);
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.isUploadingAvatar.set(false);
+        this.error.set(err.error?.message ?? "Erreur lors de la suppression de la photo");
+      },
     });
   }
 

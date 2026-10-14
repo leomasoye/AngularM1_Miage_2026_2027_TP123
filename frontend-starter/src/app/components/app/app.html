@@ -26,8 +26,13 @@
           }
         </a>
         <a routerLink="/profile" routerLinkActive="active" class="nav-item">
-          <span class="material-symbols-outlined">account_circle</span>
-          Profil @if (auth.currentUser(); as user) { ({{ user.name }}) }
+          @if (auth.currentUser(); as user) {
+            <app-avatar [user]="user" size="sm"></app-avatar>
+            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ user.name }}</span>
+          } @else {
+            <span class="material-symbols-outlined">account_circle</span>
+            <span>Profil</span>
+          }
         </a>
       </div>
 

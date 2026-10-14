@@ -15,6 +15,47 @@
 
   @if (auth.currentUser(); as user) {
     <div class="user-details">
+      <!-- Avatar Section -->
+      <div class="avatar-profile-section" style="display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+        <app-avatar [user]="user" size="lg"></app-avatar>
+        
+        <input
+          #avatarInput
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          style="display: none"
+          (change)="onAvatarSelected($event)"
+        />
+
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <button
+            mat-stroked-button
+            type="button"
+            (click)="avatarInput.click()"
+            [disabled]="isUploadingAvatar()"
+          >
+            @if (isUploadingAvatar()) {
+              <mat-spinner diameter="18" style="display: inline-block; vertical-align: middle; margin-right: 6px;"></mat-spinner>
+            } @else {
+              <mat-icon>photo_camera</mat-icon>
+            }
+            {{ user.avatarUrl ? 'Changer de photo' : 'Ajouter une photo' }}
+          </button>
+
+          @if (user.avatarUrl) {
+            <button
+              mat-button
+              color="warn"
+              type="button"
+              (click)="deleteAvatar()"
+              [disabled]="isUploadingAvatar()"
+            >
+              <mat-icon>delete</mat-icon> Supprimer
+            </button>
+          }
+        </div>
+      </div>
+
       <div class="user-info-box" style="background: var(--bg-void); padding: 1.5rem; border-radius: var(--radius-sm); border: var(--border-subtle); margin-bottom: 2rem;">
         <p class="text-body" style="margin: 0 0 0.5rem 0;"><strong>Nom actuel :</strong> {{ user.name }}</p>
         <p class="text-body" style="margin: 0 0 0.5rem 0;"><strong>Email :</strong> <span style="color: var(--orchid-300);">{{ user.email }}</span></p>

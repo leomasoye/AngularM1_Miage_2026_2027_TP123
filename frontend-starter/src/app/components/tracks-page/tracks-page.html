@@ -76,6 +76,9 @@
 
             <div class="track-actions">
               <app-like-button [track]="track" (trackUpdated)="onTrackLiked($event)"></app-like-button>
+              <button mat-icon-button (click)="addToQueue(track)" title="Ajouter à la file d'attente">
+                <mat-icon>playlist_add</mat-icon>
+              </button>
               <button mat-icon-button (click)="openShareModal(track)" title="Partager avec des amis">
                 <mat-icon>share</mat-icon>
               </button>

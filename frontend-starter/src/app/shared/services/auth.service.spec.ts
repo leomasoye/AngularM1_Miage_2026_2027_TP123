@@ -51,4 +51,46 @@ describe('AuthService', () => {
     expect(service.token()).toBe('mock-jwt-token');
     expect(service.currentUser()?.name).toBe('Test');
   });
+
+  it('devrait envoyer le fichier avatar via PUT /api/users/me/avatar et mettre à jour le profil', () => {
+    const mockUser = {
+      id: '1',
+      name: 'Test',
+      email: 'test@example.com',
+      avatarUrl: '/api/users/avatar/avatar-abc.png',
+      createdAt: '2026-01-01',
+    };
+    const dummyFile = new File(['dummy-content'], 'avatar.png', { type: 'image/png' });
+
+    service.uploadAvatar(dummyFile).subscribe((user) => {
+      expect(user.avatarUrl).toBe('/api/users/avatar/avatar-abc.png');
+    });
+
+    const req = httpMock.expectOne('/api/users/me/avatar');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body instanceof FormData).toBe(true);
+
+    req.flush(mockUser);
+    expect(service.currentUser()?.avatarUrl).toBe('/api/users/avatar/avatar-abc.png');
+  });
+
+  it('devrait supprimer l avatar via DELETE /api/users/me/avatar et réinitialiser avatarUrl', () => {
+    const mockUser = {
+      id: '1',
+      name: 'Test',
+      email: 'test@example.com',
+      avatarUrl: null,
+      createdAt: '2026-01-01',
+    };
+
+    service.deleteAvatar().subscribe((user) => {
+      expect(user.avatarUrl).toBeNull();
+    });
+
+    const req = httpMock.expectOne('/api/users/me/avatar');
+    expect(req.request.method).toBe('DELETE');
+
+    req.flush(mockUser);
+    expect(service.currentUser()?.avatarUrl).toBeNull();
+  });
 });

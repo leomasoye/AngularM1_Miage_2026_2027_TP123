@@ -15,6 +15,7 @@ const schema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+    avatarUrl: { type: String, default: null },
     // select:false empêche de renvoyer le hash par défaut dans les requêtes.
     passwordHash: { type: String, required: true, select: false },
   },
@@ -54,6 +55,7 @@ schema.methods.toPublic = function () {
     id: this.id,
     name: this.name,
     email: this.email,
+    avatarUrl: this.avatarUrl || null,
     createdAt: this.createdAt,
   };
 };
