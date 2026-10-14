@@ -1,0 +1,299 @@
+:host {
+  display: block;
+  width: 100%;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.player-bar {
+  display: grid;
+  grid-template-columns: 280px 1fr 280px;
+  align-items: center;
+  gap: 1.5rem;
+  height: 90px;
+  padding: 0 1.5rem;
+  background: rgba(19, 19, 26, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(155, 63, 212, 0.25);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.7);
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* SECTION GAUCHE : Track info */
+.track-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.track-cover {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-sm);
+  background: var(--gradient-marble);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(107, 31, 168, 0.35);
+  transition: transform 0.4s ease;
+}
+
+.track-cover.spinning {
+  animation: pulseGlow 3s infinite alternate ease-in-out;
+}
+
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 4px 16px rgba(107, 31, 168, 0.35);
+    transform: scale(1);
+  }
+  100% {
+    box-shadow: 0 4px 24px rgba(26, 127, 232, 0.55);
+    transform: scale(1.03);
+  }
+}
+
+.track-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.track-title {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+}
+
+.track-artist {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* SECTION CENTRALE : Contrôles & timeline */
+.player-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 680px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.player-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.btn-control-secondary {
+  color: var(--text-secondary) !important;
+  transition: color var(--transition-fast), transform var(--transition-fast) !important;
+}
+
+.btn-control-secondary:hover {
+  color: var(--text-primary) !important;
+  transform: scale(1.1);
+}
+
+.btn-play-pause {
+  background: var(--orchid-500) !important;
+  color: #ffffff !important;
+  width: 44px !important;
+  height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 50% !important;
+  box-shadow: 0 0 20px rgba(155, 63, 212, 0.5) !important;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast) !important;
+}
+
+.btn-play-pause:hover {
+  transform: scale(1.08) !important;
+  background: var(--orchid-300) !important;
+  box-shadow: 0 0 28px rgba(155, 63, 212, 0.7) !important;
+}
+
+.play-icon {
+  font-size: 26px !important;
+  width: 26px !important;
+  height: 26px !important;
+}
+
+.timeline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.time-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 32px;
+}
+
+.slider-wrapper {
+  position: relative;
+  flex: 1;
+  height: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.progress-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  outline: none;
+  cursor: pointer;
+  z-index: 2;
+  position: relative;
+  transition: height var(--transition-fast);
+}
+
+.slider-wrapper:hover .progress-slider {
+  height: 6px;
+}
+
+.progress-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 10px rgba(155, 63, 212, 0.9);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.slider-wrapper:hover .progress-slider::-webkit-slider-thumb {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+.progress-fill {
+  position: absolute;
+  left: 0;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--gradient-orchid-blue);
+  pointer-events: none;
+  z-index: 1;
+  transition: height var(--transition-fast);
+}
+
+.slider-wrapper:hover .progress-fill {
+  height: 6px;
+}
+
+/* SECTION DROITE : Visualiseur & Volume */
+.player-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1.25rem;
+}
+
+.visualizer-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 13, 15, 0.6);
+  border: 1px solid rgba(155, 63, 212, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+}
+
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-volume {
+  color: var(--text-secondary) !important;
+  transition: color var(--transition-fast) !important;
+}
+
+.btn-volume:hover {
+  color: var(--text-primary) !important;
+}
+
+.volume-slider-wrapper {
+  width: 90px;
+  display: flex;
+  align-items: center;
+}
+
+.volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  outline: none;
+  cursor: pointer;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--blue-300);
+  box-shadow: 0 0 6px rgba(26, 127, 232, 0.8);
+  cursor: pointer;
+}
+
+/* RESPONSIVE */
+@media (max-width: 860px) {
+  .player-bar {
+    grid-template-columns: 1fr auto;
+    gap: 0.75rem;
+    height: 76px;
+    padding: 0 1rem;
+  }
+
+  .visualizer-wrapper,
+  .volume-control {
+    display: none;
+  }
+}

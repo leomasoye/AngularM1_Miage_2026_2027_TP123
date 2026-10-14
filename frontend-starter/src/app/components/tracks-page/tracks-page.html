@@ -113,22 +113,6 @@
           </mat-select>
         </mat-form-field>
       </div>
-
-      @if (audioUrl() && playingTrack()) {
-        <div class="player-bar-container" style="margin-top: 2rem; padding: 1rem; background: var(--bg-void); border-radius: var(--radius-sm); border: var(--border-subtle);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <span class="now-playing" style="width: 8px; height: 8px; background: var(--orchid-500); border-radius: 50%;"></span>
-              <span class="text-label" style="color: var(--orchid-500)">LECTURE EN COURS</span>
-            </div>
-            <button mat-icon-button color="warn" (click)="stop()" title="Fermer"><mat-icon>close</mat-icon></button>
-          </div>
-          <div>
-            <h4 style="margin: 0;">{{ playingTrack()?.title }}</h4>
-            <audio [src]="audioUrl()" controls autoplay style="width: 100%; margin-top: 1rem; border-radius: var(--radius-sm);"></audio>
-          </div>
-        </div>
-      }
     </article>
   </div>
 </section>

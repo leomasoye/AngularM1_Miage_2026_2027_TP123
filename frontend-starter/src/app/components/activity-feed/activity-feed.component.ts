@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit, signal } from "@angular/core";
+import { Component, computed, DestroyRef, inject, OnInit, signal } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { MatButtonModule } from "@angular/material/button";
@@ -7,6 +7,7 @@ import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { ActivityService } from "../../shared/services/activity.service";
 import { TrackService } from "../../shared/services/track.service";
+import { PlayerService } from "../../shared/services/player.service";
 import { ActivityTrack } from "../../shared/models/activity.model";
 import { LikeButtonComponent } from "../like-button/like-button";
 import { fromEvent, timer } from "rxjs";
@@ -28,6 +29,7 @@ import { filter } from "rxjs/operators";
 export class ActivityFeedComponent implements OnInit {
   private readonly activityService = inject(ActivityService);
   private readonly trackService = inject(TrackService);
+  readonly player = inject(PlayerService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -37,10 +39,13 @@ export class ActivityFeedComponent implements OnInit {
   readonly hasMore = signal(false);
   readonly nextCursor = signal<string | null>(null);
 
-  // Audio player state
-  readonly playingTrack = signal<ActivityTrack | null>(null);
-  readonly audioUrl = signal<string | null>(null);
-  readonly loadingAudioId = signal<string | null>(null);
+  // Audio player state unifié
+  readonly playingTrack = computed(() => this.player.currentTrack());
+  readonly loadingAudioId = computed(() =>
+    this.player.isLoading() && this.player.currentTrack()
+      ? this.player.currentTrack()!.id
+      : null
+  );
 
   ngOnInit(): void {
     this.loadInitialActivity();
@@ -132,39 +137,15 @@ export class ActivityFeedComponent implements OnInit {
   }
 
   play(track: ActivityTrack): void {
-    if (this.playingTrack()?.id === track.id) {
-      this.stop();
-      return;
+    if (this.player.currentTrack()?.id === track.id) {
+      void this.player.togglePlay();
+    } else {
+      void this.player.playTrack(track as any);
     }
-
-    this.stop();
-    this.loadingAudioId.set(track.id);
-
-    this.trackService.audio(track.id).subscribe({
-      next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        this.audioUrl.set(url);
-        this.playingTrack.set(track);
-        this.loadingAudioId.set(null);
-      },
-      error: (err) => {
-        this.loadingAudioId.set(null);
-        const msg =
-          err.status === 404
-            ? "Accès non autorisé ou morceau supprimé."
-            : "Impossible de charger le flux audio.";
-        this.snackBar.open(msg, "Fermer", { duration: 3000 });
-      },
-    });
   }
 
   stop(): void {
-    const currentUrl = this.audioUrl();
-    if (currentUrl) {
-      URL.revokeObjectURL(currentUrl);
-      this.audioUrl.set(null);
-    }
-    this.playingTrack.set(null);
+    this.player.stop();
   }
 
   onTrackLiked(updated: any): void {

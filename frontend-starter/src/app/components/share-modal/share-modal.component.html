@@ -51,11 +51,15 @@
                   @if (savingUserId() === friend.friendId) {
                     <mat-spinner diameter="18"></mat-spinner>
                   } @else if (isShared(friend.friendId)) {
-                    <mat-icon>check</mat-icon>
-                    <span>Partagé</span>
+                    <span style="display: inline-flex; align-items: center; gap: 6px;">
+                      <mat-icon>check</mat-icon>
+                      <span>Partagé</span>
+                    </span>
                   } @else {
-                    <mat-icon>person_add</mat-icon>
-                    <span>Partager</span>
+                    <span style="display: inline-flex; align-items: center; gap: 6px;">
+                      <mat-icon>person_add</mat-icon>
+                      <span>Partager</span>
+                    </span>
                   }
                 </button>
               </div>

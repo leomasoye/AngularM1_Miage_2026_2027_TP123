@@ -8,6 +8,7 @@ import { LikeButtonComponent } from '../like-button/like-button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { SearchService, SearchResults } from '../../shared/services/search.service';
+import { PlayerService } from '../../shared/services/player.service';
 
 @Component({
   selector: 'app-search-results',
@@ -22,6 +23,15 @@ export class SearchResultsComponent implements OnInit {
   private readonly searchService = inject(SearchService);
   private readonly friendsService = inject(FriendsService);
   private readonly snackBar = inject(MatSnackBar);
+  readonly player = inject(PlayerService);
+
+  play(track: any): void {
+    if (this.player.currentTrack()?.id === track.id) {
+      void this.player.togglePlay();
+    } else {
+      void this.player.playTrack(track);
+    }
+  }
 
   addFriend(userId: string) {
     this.friendsService.addFriend(userId).subscribe({

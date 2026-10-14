@@ -6,9 +6,11 @@ import { FriendsService } from '../../shared/services/friends.service';
 import { fromEvent, of, timer } from 'rxjs';
 import { catchError, filter, switchMap } from 'rxjs/operators';
 
+import { PlayerBarComponent } from '../player-bar/player-bar.component';
+
 @Component({
   selector: 'app-root',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, PlayerBarComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })

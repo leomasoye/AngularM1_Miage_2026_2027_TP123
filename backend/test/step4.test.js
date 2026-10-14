@@ -84,3 +84,50 @@ test("canAccessTrack with active share", async () => {
   }
 });
 
+test("Friendship schema validation and self-friendship rejection", async () => {
+  const userA = new mongoose.Types.ObjectId();
+  const userB = new mongoose.Types.ObjectId();
+
+  const validFriendship = new Friendship({
+    requesterId: userA,
+    addresseeId: userB,
+  });
+  await validFriendship.validate();
+  assert.equal(validFriendship.status, "pending");
+
+  const selfFriendship = new Friendship({
+    requesterId: userA,
+    addresseeId: userA,
+  });
+
+  await assert.rejects(
+    async () => {
+      await selfFriendship.validate();
+    },
+    /Vous ne pouvez pas vous ajouter vous-même/
+  );
+});
+
+test("Track model likes and toPublic output", () => {
+  const ownerId = new mongoose.Types.ObjectId();
+  const userId = new mongoose.Types.ObjectId();
+
+  const track = new Track({
+    ownerId,
+    title: "In the End",
+    originalName: "in_the_end.mp3",
+    storedName: "secret_file.mp3",
+    mimeType: "audio/mpeg",
+    size: 1024,
+    visibility: "public",
+    likes: [userId],
+  });
+
+  const pub = track.toPublic();
+  assert.equal(pub.title, "In the End");
+  assert.equal(pub.visibility, "public");
+  assert.equal(pub.likes.length, 1);
+  assert.equal(pub.likes[0], userId.toString());
+  assert.equal(pub.storedName, undefined); // Never expose storedName
+});
+

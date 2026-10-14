@@ -119,11 +119,25 @@ router.post("/", auth, upload.single("audio"), async (req, res, next) => {
   }
 });
 
+router.options("/:id/audio", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Range, Authorization");
+  res.setHeader("Access-Control-Max-Age", "86400");
+  res.sendStatus(204);
+});
+
 router.get("/:id/audio", auth, loadTrack, async (req, res, next) => {
   try {
     if (!(await canAccessTrack(req.auth.sub, req.track))) {
       return res.status(404).json({ message: "Piste inconnue" }); // Renvoie 404 comme demandé
     }
+
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Range, Authorization");
+    res.setHeader("Access-Control-Expose-Headers", "Content-Length, Content-Range, Accept-Ranges");
+    res.setHeader("Accept-Ranges", "bytes");
 
     const audioPath = path.join(UPLOADS, req.track.storedName);
     res.type(req.track.mimeType);

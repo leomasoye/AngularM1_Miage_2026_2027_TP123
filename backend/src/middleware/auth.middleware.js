@@ -10,7 +10,10 @@ export function token(user) {
 }
 
 export function auth(req, res, next) {
-  const raw = req.headers.authorization;
+  let raw = req.headers.authorization;
+  if (!raw && req.query?.token) {
+    raw = `Bearer ${req.query.token}`;
+  }
 
   if (!raw?.startsWith("Bearer ")) {
     console.warn(`[auth] Authorization absente pour ${req.method} ${req.path}`);

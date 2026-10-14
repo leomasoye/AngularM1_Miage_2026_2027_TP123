@@ -36,7 +36,17 @@
                 <div class="text-body" style="font-weight: 600;">{{ track.title }}</div>
                 <div class="text-small text-muted">Par {{ track.ownerName }}</div>
               </div>
-<div style="display: flex; gap: 0.5rem;"><app-like-button [track]="track"></app-like-button><button mat-icon-button color="primary" title="Jouer (Bientôt disponible)"><mat-icon>play_circle</mat-icon></button></div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <app-like-button [track]="track"></app-like-button>
+                <button
+                  mat-icon-button
+                  color="primary"
+                  (click)="play(track)"
+                  [title]="player.currentTrack()?.id === track.id && player.isPlaying() ? 'Pause' : 'Écouter'"
+                >
+                  <mat-icon>{{ player.currentTrack()?.id === track.id && player.isPlaying() ? 'pause_circle' : 'play_circle' }}</mat-icon>
+                </button>
+              </div>
             </div>
           } @empty {
             <p class="text-muted text-center" style="padding: 1rem;">Aucune piste trouvée.</p>

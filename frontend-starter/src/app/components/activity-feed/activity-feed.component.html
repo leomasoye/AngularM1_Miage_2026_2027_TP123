@@ -112,30 +112,15 @@
               @if (loadingMore()) {
                 <mat-spinner diameter="20"></mat-spinner>
               } @else {
-                <mat-icon>expand_more</mat-icon>
-                <span>Charger plus d'activités</span>
+                <span style="display: inline-flex; align-items: center; gap: 6px;">
+                  <mat-icon>expand_more</mat-icon>
+                  <span>Charger plus d'activités</span>
+                </span>
               }
             </button>
           </div>
         }
       }
-    }
-
-    @if (audioUrl() && playingTrack()) {
-      <div class="player-bar-container glass-card">
-        <div class="player-header">
-          <div class="player-status">
-            <span class="now-playing-dot"></span>
-            <span class="text-label" style="color: var(--orchid-500)">LECTURE EN COURS</span>
-          </div>
-          <button mat-icon-button color="warn" (click)="stop()" title="Arrêter"><mat-icon>close</mat-icon></button>
-        </div>
-        <div>
-          <h4 style="margin: 0; font-size: 1.1rem;">{{ playingTrack()?.title }}</h4>
-          <p class="text-small text-muted" style="margin: 0.25rem 0 0.75rem;">Par {{ playingTrack()?.ownerName }}</p>
-          <audio [src]="audioUrl()" controls autoplay style="width: 100%; border-radius: var(--radius-sm);"></audio>
-        </div>
-      </div>
     }
   </div>
 </section>

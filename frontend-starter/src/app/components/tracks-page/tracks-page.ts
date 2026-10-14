@@ -1,5 +1,6 @@
 import {
   Component,
+  computed,
   ElementRef,
   inject,
   OnDestroy,
@@ -21,6 +22,7 @@ import { TrackService } from '../../shared/services/track.service';
 import { TrackUploadComponent } from './track-upload/track-upload.component';
 import { LikeButtonComponent } from '../like-button/like-button';
 import { ShareModalComponent } from '../share-modal/share-modal.component';
+import { PlayerService } from '../../shared/services/player.service';
 
 @Component({
   imports: [
@@ -41,6 +43,7 @@ import { ShareModalComponent } from '../share-modal/share-modal.component';
 })
 export class TracksPageComponent implements OnDestroy {
   private readonly service = inject(TrackService);
+  readonly player = inject(PlayerService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialog = inject(MatDialog);
   private readonly fileInputRef = viewChild<ElementRef<HTMLInputElement>>('fileInput');
@@ -74,11 +77,14 @@ export class TracksPageComponent implements OnDestroy {
   // Signaux pour la suppression
   readonly deletingTrackId = signal<string | null>(null);
 
-  // Signaux pour le lecteur audio
-  readonly audioUrl = signal('');
-  readonly playingTrack = signal<Track | null>(null);
-  readonly loadingAudioId = signal<string | null>(null);
-  readonly audioError = signal<string | null>(null);
+  // Signaux pour le lecteur audio unifié
+  readonly playingTrack = computed(() => this.player.currentTrack());
+  readonly loadingAudioId = computed(() =>
+    this.player.isLoading() && this.player.currentTrack()
+      ? this.player.currentTrack()!.id
+      : null
+  );
+  readonly audioError = computed(() => this.player.error());
 
   // Formulaire d'upload
   readonly title = new FormControl('', { nonNullable: true });
@@ -89,12 +95,7 @@ export class TracksPageComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // Libération de la mémoire : révocation de l'ObjectURL à la destruction du composant
-    const currentUrl = this.audioUrl();
-    if (currentUrl) {
-      console.debug('[TracksPage] Nettoyage : révocation de l\'URL audio');
-      URL.revokeObjectURL(currentUrl);
-    }
+    // Nettoyage si nécessaire
   }
 
   choose(event: Event): void {
@@ -259,39 +260,15 @@ export class TracksPageComponent implements OnDestroy {
   }
 
   play(track: Track): void {
-    if (this.playingTrack()?.id === track.id && this.audioUrl()) {
-      this.stop();
-      return;
+    if (this.player.currentTrack()?.id === track.id) {
+      void this.player.togglePlay();
+    } else {
+      void this.player.playTrack(track);
     }
-
-    this.audioError.set(null);
-    this.loadingAudioId.set(track.id);
-
-    this.service.audio(track.id).subscribe({
-      next: (blob) => {
-        console.debug('[TracksPage] Audio chargé avec succès', track.id);
-        const previousUrl = this.audioUrl();
-        if (previousUrl) URL.revokeObjectURL(previousUrl);
-        this.audioUrl.set(URL.createObjectURL(blob));
-        this.playingTrack.set(track);
-        this.loadingAudioId.set(null);
-      },
-      error: (error) => {
-        console.error('[TracksPage] Lecture impossible', error);
-        this.audioError.set(error?.error?.message || `Impossible de lire la piste "${track.title}".`);
-        this.loadingAudioId.set(null);
-      },
-    });
   }
 
   stop(): void {
-    const currentUrl = this.audioUrl();
-    if (currentUrl) {
-      URL.revokeObjectURL(currentUrl);
-      this.audioUrl.set('');
-    }
-    this.playingTrack.set(null);
-    this.loadingAudioId.set(null);
+    this.player.stop();
   }
 
   formatSize(bytes: number): string {

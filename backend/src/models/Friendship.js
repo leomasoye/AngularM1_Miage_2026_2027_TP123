@@ -27,11 +27,10 @@ const schema = new mongoose.Schema(
 schema.index({ requesterId: 1, addresseeId: 1 }, { unique: true });
 
 // Empêcher l'auto-amitié (Validation au niveau de Mongoose)
-schema.pre("validate", function (next) {
+schema.pre("validate", function () {
   if (this.requesterId && this.addresseeId && this.requesterId.toString() === this.addresseeId.toString()) {
-    return next(new Error("Vous ne pouvez pas vous ajouter vous-même en ami."));
+    throw new Error("Vous ne pouvez pas vous ajouter vous-même en ami.");
   }
-  next();
 });
 
 schema.methods.toPublic = function () {
