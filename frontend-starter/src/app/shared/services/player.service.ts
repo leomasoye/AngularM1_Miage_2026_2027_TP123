@@ -2,6 +2,8 @@ import { computed, inject, Injectable, OnDestroy, signal } from '@angular/core';
 import { AuthService } from './auth.service';
 import { Track } from '../models/track.model';
 
+export type EQPreset = 'flat' | 'bass-boost' | 'vocal' | 'electronic' | 'custom';
+
 @Injectable({
   providedIn: 'root',
 })
@@ -12,9 +14,22 @@ export class PlayerService implements OnDestroy {
   private audioCtx?: AudioContext;
   private sourceNode?: MediaElementAudioSourceNode;
   private gainNode?: GainNode;
-  private analyserNode?: AnalyserNode;
   private pannerNode?: StereoPannerNode;
+
+  // Filtres Égaliseur 3 bandes
+  private lowFilter?: BiquadFilterNode;
+  private midFilter?: BiquadFilterNode;
+  private highFilter?: BiquadFilterNode;
+
+  // Analyseur principal (FFT) et analyseurs stéréo (VU-mètres L/R)
+  private analyserNode?: AnalyserNode;
+  private splitterNode?: ChannelSplitterNode;
+  private analyserLeft?: AnalyserNode;
+  private analyserRight?: AnalyserNode;
+
   private isSourceConnected = false;
+  private leftPeak = 0;
+  private rightPeak = 0;
 
   // Signaux d'état du lecteur
   readonly currentTrack = signal<Track | null>(null);
@@ -30,11 +45,18 @@ export class PlayerService implements OnDestroy {
   readonly isSeeking = signal(false);
   readonly error = signal<string | null>(null);
 
+  // Signaux d'égaliseur (en dB de -12 à +12)
+  readonly bass = signal(0);
+  readonly mid = signal(0);
+  readonly treble = signal(0);
+  readonly currentPreset = signal<EQPreset>('flat');
+
   // Signal dérivé pour formater le temps actuel et la durée
   readonly formattedCurrentTime = computed(() => this.formatTime(this.currentTime()));
   readonly formattedDuration = computed(() => this.formatTime(this.duration()));
 
   constructor() {
+    this.loadEQFromStorage();
     this.initAudio();
   }
 
@@ -71,20 +93,48 @@ export class PlayerService implements OnDestroy {
     try {
       this.audioCtx = new AudioContextClass();
 
-      // Noeud de Gain pour le volume
+      // 1. Filtres égaliseur 3 bandes
+      this.lowFilter = this.audioCtx.createBiquadFilter();
+      this.lowFilter.type = 'lowshelf';
+      this.lowFilter.frequency.value = 100;
+      this.lowFilter.gain.value = this.bass();
+
+      this.midFilter = this.audioCtx.createBiquadFilter();
+      this.midFilter.type = 'peaking';
+      this.midFilter.frequency.value = 1000;
+      this.midFilter.Q.value = 1;
+      this.midFilter.gain.value = this.mid();
+
+      this.highFilter = this.audioCtx.createBiquadFilter();
+      this.highFilter.type = 'highshelf';
+      this.highFilter.frequency.value = 8000;
+      this.highFilter.gain.value = this.treble();
+
+      // 2. Noeud de Gain pour le volume
       this.gainNode = this.audioCtx.createGain();
       this.gainNode.gain.value = this.volume();
 
-      // Noeud d'Analyse pour VU-mètres et spectres
-      this.analyserNode = this.audioCtx.createAnalyser();
-      this.analyserNode.fftSize = 256;
-      this.analyserNode.smoothingTimeConstant = 0.8;
-
-      // Panner stéréo pour la balance G/D
+      // 3. Panner stéréo pour la balance G/D
       if (typeof this.audioCtx.createStereoPanner === 'function') {
         this.pannerNode = this.audioCtx.createStereoPanner();
         this.pannerNode.pan.value = this.balance();
       }
+
+      // 4. Noeud d'Analyse principal pour le spectre FFT
+      this.analyserNode = this.audioCtx.createAnalyser();
+      this.analyserNode.fftSize = 256;
+      this.analyserNode.smoothingTimeConstant = 0.8;
+
+      // 5. Splitter pour séparer les canaux Gauche / Droite (VU-mètres stéréo)
+      this.splitterNode = this.audioCtx.createChannelSplitter(2);
+
+      this.analyserLeft = this.audioCtx.createAnalyser();
+      this.analyserLeft.fftSize = 256;
+      this.analyserLeft.smoothingTimeConstant = 0.5;
+
+      this.analyserRight = this.audioCtx.createAnalyser();
+      this.analyserRight.fftSize = 256;
+      this.analyserRight.smoothingTimeConstant = 0.5;
 
       this.connectNodes();
     } catch (e) {
@@ -101,17 +151,41 @@ export class PlayerService implements OnDestroy {
         this.isSourceConnected = true;
       }
 
-      // Chaîne audio: source -> gain -> analyser -> (panner) -> destination
       if (this.sourceNode) {
         this.sourceNode.disconnect();
-        this.sourceNode.connect(this.gainNode);
-        this.gainNode.connect(this.analyserNode);
+
+        // Chaîne principale : source -> lowFilter -> midFilter -> highFilter -> gainNode -> panner -> destination
+        let lastNode: AudioNode = this.sourceNode;
+
+        if (this.lowFilter && this.midFilter && this.highFilter) {
+          lastNode.connect(this.lowFilter);
+          this.lowFilter.connect(this.midFilter);
+          this.midFilter.connect(this.highFilter);
+          this.highFilter.connect(this.gainNode);
+          lastNode = this.gainNode;
+        } else {
+          lastNode.connect(this.gainNode);
+          lastNode = this.gainNode;
+        }
 
         if (this.pannerNode) {
-          this.analyserNode.connect(this.pannerNode);
-          this.pannerNode.connect(this.audioCtx.destination);
-        } else {
-          this.analyserNode.connect(this.audioCtx.destination);
+          lastNode.connect(this.pannerNode);
+          lastNode = this.pannerNode;
+        }
+
+        // Sortie audio vers haut-parleurs
+        lastNode.connect(this.audioCtx.destination);
+
+        // Dérivation vers le visualiseur de fréquences FFT
+        if (this.analyserNode) {
+          lastNode.connect(this.analyserNode);
+        }
+
+        // Dérivation vers les VU-mètres stéréo séparés
+        if (this.splitterNode && this.analyserLeft && this.analyserRight) {
+          lastNode.connect(this.splitterNode);
+          this.splitterNode.connect(this.analyserLeft, 0);
+          this.splitterNode.connect(this.analyserRight, 1);
         }
       }
     } catch (e) {
@@ -301,6 +375,94 @@ export class PlayerService implements OnDestroy {
     }
   }
 
+  // --- Gestion de l'Égaliseur (EQ 3 bandes) ---
+  setBass(db: number): void {
+    const clamped = Math.max(-12, Math.min(12, db));
+    this.bass.set(clamped);
+    if (this.lowFilter) {
+      this.lowFilter.gain.value = clamped;
+    }
+    this.currentPreset.set('custom');
+    this.saveEQToStorage();
+  }
+
+  setMid(db: number): void {
+    const clamped = Math.max(-12, Math.min(12, db));
+    this.mid.set(clamped);
+    if (this.midFilter) {
+      this.midFilter.gain.value = clamped;
+    }
+    this.currentPreset.set('custom');
+    this.saveEQToStorage();
+  }
+
+  setTreble(db: number): void {
+    const clamped = Math.max(-12, Math.min(12, db));
+    this.treble.set(clamped);
+    if (this.highFilter) {
+      this.highFilter.gain.value = clamped;
+    }
+    this.currentPreset.set('custom');
+    this.saveEQToStorage();
+  }
+
+  setPreset(name: 'flat' | 'bass-boost' | 'vocal' | 'electronic'): void {
+    const presets: Record<string, { bass: number; mid: number; treble: number }> = {
+      flat: { bass: 0, mid: 0, treble: 0 },
+      'bass-boost': { bass: 7, mid: 0, treble: -1 },
+      vocal: { bass: -2, mid: 6, treble: 3 },
+      electronic: { bass: 5, mid: -1, treble: 5 },
+    };
+
+    const target = presets[name] || presets['flat'];
+    this.bass.set(target.bass);
+    this.mid.set(target.mid);
+    this.treble.set(target.treble);
+
+    if (this.lowFilter) this.lowFilter.gain.value = target.bass;
+    if (this.midFilter) this.midFilter.gain.value = target.mid;
+    if (this.highFilter) this.highFilter.gain.value = target.treble;
+
+    this.currentPreset.set(name);
+    this.saveEQToStorage();
+  }
+
+  resetEQ(): void {
+    this.setPreset('flat');
+  }
+
+  private saveEQToStorage(): void {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      const data = {
+        bass: this.bass(),
+        mid: this.mid(),
+        treble: this.treble(),
+        preset: this.currentPreset(),
+      };
+      localStorage.setItem('from_zero_eq', JSON.stringify(data));
+    } catch {
+      // Ignorer si stockage inaccessible
+    }
+  }
+
+  private loadEQFromStorage(): void {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      const stored = localStorage.getItem('from_zero_eq');
+      if (stored) {
+        const data = JSON.parse(stored);
+        if (typeof data.bass === 'number') this.bass.set(data.bass);
+        if (typeof data.mid === 'number') this.mid.set(data.mid);
+        if (typeof data.treble === 'number') this.treble.set(data.treble);
+        if (data.preset) this.currentPreset.set(data.preset);
+      }
+    } catch {
+      // Ignorer si parsing invalide
+    }
+  }
+
+  // --- Données d'analyse et VU-mètres Stéréo ---
   getFrequencyData(): Uint8Array {
     if (!this.analyserNode) return new Uint8Array(0);
     const dataArray = new Uint8Array(this.analyserNode.frequencyBinCount);
@@ -313,6 +475,40 @@ export class PlayerService implements OnDestroy {
     const dataArray = new Uint8Array(this.analyserNode.fftSize);
     this.analyserNode.getByteTimeDomainData(dataArray);
     return dataArray;
+  }
+
+  getStereoVULevels(): { left: number; right: number; leftPeak: number; rightPeak: number } {
+    if (!this.analyserLeft || !this.analyserRight || !this.isPlaying()) {
+      return { left: 0, right: 0, leftPeak: 0, rightPeak: 0 };
+    }
+
+    const leftLevel = this.computeRMS(this.analyserLeft);
+    const rightLevel = this.computeRMS(this.analyserRight);
+
+    if (leftLevel > this.leftPeak) this.leftPeak = leftLevel;
+    else this.leftPeak = Math.max(0, this.leftPeak - 0.02);
+
+    if (rightLevel > this.rightPeak) this.rightPeak = rightLevel;
+    else this.rightPeak = Math.max(0, this.rightPeak - 0.02);
+
+    return {
+      left: leftLevel,
+      right: rightLevel,
+      leftPeak: this.leftPeak,
+      rightPeak: this.rightPeak,
+    };
+  }
+
+  private computeRMS(analyser: AnalyserNode): number {
+    const buffer = new Uint8Array(analyser.fftSize);
+    analyser.getByteTimeDomainData(buffer);
+    let sum = 0;
+    for (let i = 0; i < buffer.length; i++) {
+      const val = (buffer[i] - 128) / 128;
+      sum += val * val;
+    }
+    const rms = Math.sqrt(sum / buffer.length);
+    return Math.min(1, rms * 2.8);
   }
 
   getAudioContext(): AudioContext | undefined {

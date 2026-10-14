@@ -131,7 +131,7 @@ Transformer le prototype de gestion de pistes en application musicale sociale (t
 
 ---
 
-## Étape 6 : Web Audio Avancé (VU-mètres, EQ)
+## Étape 6 : Web Audio Avancé (VU-mètres, EQ) ✅ [TERMINÉE]
 **Goal:** Connecter les filtres et visualiseurs au graphe.
 
 #### [MODIFY] Frontend `PlayerService` (Graphe)
@@ -143,7 +143,7 @@ Transformer le prototype de gestion de pistes en application musicale sociale (t
 - *Stretch goals : Reverb et Delay.*
 
 **Risques:** Baisse de framerate (lag global de l'UI) due à `requestAnimationFrame` mal isolé de la zone Angular.
-**DoD:** L'égaliseur modifie les fréquences, les VU-mètres différencient Gauche/Droite, le framerate de l'application reste stable à 60fps.
+**DoD validée :** L'égaliseur 3 bandes (Basses 100Hz, Médiums 1kHz, Aigus 8kHz) et les 4 presets modifient la réponse en fréquence en temps réel avec persistance dans le localStorage. Les VU-mètres stéréo différencient les canaux Gauche/Droite avec indicateurs de crête. L'oscilloscope affiche la forme d'onde en direct. Les boucles requestAnimationFrame tournent en dehors de la zone Angular avec 60 fps constants. 29 tests frontend et 7 tests backend passés, build de production sans erreur.
 
 ---
 

@@ -11,8 +11,10 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { PlayerService } from '../../shared/services/player.service';
 import { LikeButtonComponent } from '../like-button/like-button';
+import { EqualizerComponent } from '../equalizer/equalizer.component';
 
 @Component({
   selector: 'app-player-bar',
@@ -22,6 +24,7 @@ import { LikeButtonComponent } from '../like-button/like-button';
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    MatDialogModule,
     LikeButtonComponent,
   ],
   templateUrl: './player-bar.component.html',
@@ -29,6 +32,7 @@ import { LikeButtonComponent } from '../like-button/like-button';
 })
 export class PlayerBarComponent implements OnInit, OnDestroy {
   readonly player = inject(PlayerService);
+  private readonly dialog = inject(MatDialog);
   private readonly ngZone = inject(NgZone);
 
   readonly canvasRef = viewChild<ElementRef<HTMLCanvasElement>>('visualizerCanvas');
@@ -75,6 +79,13 @@ export class PlayerBarComponent implements OnInit, OnDestroy {
     this.player.endSeeking(pct);
   }
 
+  openEqualizer(): void {
+    this.dialog.open(EqualizerComponent, {
+      width: '580px',
+      panelClass: 'from-zero-dialog',
+    });
+  }
+
   private startVisualizer(): void {
     if (typeof window === 'undefined' || typeof requestAnimationFrame === 'undefined') return;
 
@@ -111,25 +122,65 @@ export class PlayerBarComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // 1. Barres de fréquence FFT (gauche du canvas : 0 à 96px)
     const freqData = this.player.getFrequencyData();
-    if (!freqData || freqData.length === 0) return;
+    const fftWidth = 96;
+    if (freqData && freqData.length > 0) {
+      const barsCount = 14;
+      const barWidth = Math.floor(fftWidth / barsCount) - 2;
+      const step = Math.floor(freqData.length / barsCount) || 1;
 
-    const barsCount = 20;
-    const barWidth = Math.floor(width / barsCount) - 2;
-    const step = Math.floor(freqData.length / barsCount) || 1;
+      for (let i = 0; i < barsCount; i++) {
+        const val = freqData[i * step] || 0;
+        const barHeight = Math.max(2, (val / 255) * height);
+        const x = i * (barWidth + 2);
+        const y = height - barHeight;
 
-    for (let i = 0; i < barsCount; i++) {
-      const val = freqData[i * step] || 0;
-      const barHeight = Math.max(2, (val / 255) * height);
-      const x = i * (barWidth + 2);
-      const y = height - barHeight;
+        const grad = ctx.createLinearGradient(0, height, 0, 0);
+        grad.addColorStop(0, '#1a7fe8');
+        grad.addColorStop(1, '#9b3fd4');
 
-      const grad = ctx.createLinearGradient(0, height, 0, 0);
-      grad.addColorStop(0, '#1a7fe8');
-      grad.addColorStop(1, '#9b3fd4');
-
-      ctx.fillStyle = grad;
-      ctx.fillRect(x, y, barWidth, barHeight);
+        ctx.fillStyle = grad;
+        ctx.fillRect(x, y, barWidth, barHeight);
+      }
     }
+
+    // Séparateur vertical subtil
+    ctx.fillStyle = 'rgba(155, 63, 212, 0.25)';
+    ctx.fillRect(104, 2, 1, height - 4);
+
+    // 2. VU-mètres Stéréo distincts Gauche (L) & Droite (R) (112px à 136px)
+    const vu = this.player.getStereoVULevels();
+    const vuWidth = 9;
+
+    // Track L (x = 112)
+    const leftHeight = Math.min(height, Math.max(2, vu.left * height));
+    const leftY = height - leftHeight;
+    const leftGrad = ctx.createLinearGradient(0, height, 0, 0);
+    leftGrad.addColorStop(0, '#00e676');
+    leftGrad.addColorStop(0.7, '#9b3fd4');
+    leftGrad.addColorStop(1, '#ff1744');
+    ctx.fillStyle = leftGrad;
+    ctx.fillRect(112, leftY, vuWidth, leftHeight);
+
+    // Peak L
+    const leftPeakY = Math.max(0, height - (vu.leftPeak * height) - 1);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(112, leftPeakY, vuWidth, 2);
+
+    // Track R (x = 125)
+    const rightHeight = Math.min(height, Math.max(2, vu.right * height));
+    const rightY = height - rightHeight;
+    const rightGrad = ctx.createLinearGradient(0, height, 0, 0);
+    rightGrad.addColorStop(0, '#00e676');
+    rightGrad.addColorStop(0.7, '#1a7fe8');
+    rightGrad.addColorStop(1, '#ff1744');
+    ctx.fillStyle = rightGrad;
+    ctx.fillRect(125, rightY, vuWidth, rightHeight);
+
+    // Peak R
+    const rightPeakY = Math.max(0, height - (vu.rightPeak * height) - 1);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(125, rightPeakY, vuWidth, 2);
   }
 }

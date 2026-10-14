@@ -79,6 +79,7 @@ router.get("/", auth, async (req, res, next) => {
       ...track,
       id: String(track._id),
       _id: undefined,
+      likes: Array.isArray(track.likes) ? track.likes.map((id) => String(id)) : [],
     }));
 
     res.json({

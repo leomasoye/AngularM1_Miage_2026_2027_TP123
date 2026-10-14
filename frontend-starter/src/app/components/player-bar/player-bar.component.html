@@ -68,10 +68,10 @@
       </div>
     </div>
 
-    <!-- Section Droite : VU/Visualiseur & Volume -->
+    <!-- Section Droite : VU/Visualiseur, Volume & Égaliseur -->
     <div class="player-right">
-      <div class="visualizer-wrapper" title="Spectre audio temps réel">
-        <canvas #visualizerCanvas width="90" height="28"></canvas>
+      <div class="visualizer-wrapper" title="Spectre FFT & VU-mètres Stéréo (L/R)">
+        <canvas #visualizerCanvas width="140" height="28"></canvas>
       </div>
 
       <div class="volume-control">
@@ -103,6 +103,15 @@
           />
         </div>
       </div>
+
+      <button
+        mat-icon-button
+        class="btn-eq"
+        (click)="openEqualizer()"
+        title="Ouvrir l'égaliseur et les VU-mètres"
+      >
+        <mat-icon>tune</mat-icon>
+      </button>
     </div>
   </div>
 }

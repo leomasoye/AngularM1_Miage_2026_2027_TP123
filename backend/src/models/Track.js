@@ -49,7 +49,7 @@ schema.methods.toPublic = function () {
     mimeType: this.mimeType,
     size: this.size,
     visibility: this.visibility,
-    likes: this.likes ? this.likes.map(id => String(id)) : [],
+    likes: Array.isArray(this.likes) ? this.likes.map(id => String(id)) : [],
     createdAt: this.createdAt,
   };
 };

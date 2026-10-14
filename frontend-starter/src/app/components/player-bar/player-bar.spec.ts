@@ -42,6 +42,7 @@ describe('PlayerBarComponent', () => {
       togglePlay: async () => {},
       toggleMute: () => {},
       getFrequencyData: () => new Uint8Array(128),
+      getStereoVULevels: () => ({ left: 0.5, right: 0.5, leftPeak: 0.6, rightPeak: 0.6 }),
     };
 
     authMock = {

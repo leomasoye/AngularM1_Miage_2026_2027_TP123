@@ -101,4 +101,36 @@ describe('PlayerService', () => {
     expect(service.currentTime()).toBe(0);
     expect(service.progress()).toBe(0);
   });
+
+  it('devrait modifier les bandes de l égaliseur et appliquer les presets', () => {
+    service.setBass(6);
+    expect(service.bass()).toBe(6);
+    expect(service.currentPreset()).toBe('custom');
+
+    service.setMid(-3);
+    expect(service.mid()).toBe(-3);
+
+    service.setTreble(4);
+    expect(service.treble()).toBe(4);
+
+    service.setPreset('bass-boost');
+    expect(service.bass()).toBe(7);
+    expect(service.mid()).toBe(0);
+    expect(service.treble()).toBe(-1);
+    expect(service.currentPreset()).toBe('bass-boost');
+
+    service.resetEQ();
+    expect(service.bass()).toBe(0);
+    expect(service.mid()).toBe(0);
+    expect(service.treble()).toBe(0);
+    expect(service.currentPreset()).toBe('flat');
+  });
+
+  it('devrait retourner les niveaux stéréo (VU-mètres)', () => {
+    const levels = service.getStereoVULevels();
+    expect(levels).toBeDefined();
+    expect(levels.left).toBeGreaterThanOrEqual(0);
+    expect(levels.right).toBeGreaterThanOrEqual(0);
+  });
 });
+

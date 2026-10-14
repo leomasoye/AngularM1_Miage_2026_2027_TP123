@@ -31,8 +31,9 @@ export class LikeButtonComponent {
   @Input({ required: true }) set track(value: Track) {
     this._track = value;
     const userId = this.auth.currentUser()?.id;
-    this.liked.set(!!userId && value.likes.includes(userId));
-    this.likesCount.set(value.likes.length);
+    const likes = Array.isArray(value?.likes) ? value.likes : [];
+    this.liked.set(!!userId && likes.includes(userId));
+    this.likesCount.set(likes.length);
   }
   get track(): Track { return this._track; }
   private _track!: Track;
@@ -48,13 +49,13 @@ export class LikeButtonComponent {
 
   toggleLike() {
     const userId = this.auth.currentUser()?.id;
-    if (!userId) return;
+    if (!userId || !this._track) return;
 
     const wasLiked = this.liked();
 
     // Optimistic Update : UI change immédiatement
     this.liked.set(!wasLiked);
-    this.likesCount.update(c => wasLiked ? c - 1 : c + 1);
+    this.likesCount.update(c => wasLiked ? Math.max(0, c - 1) : c + 1);
 
     const request = wasLiked
       ? this.trackService.unlike(this._track.id)
@@ -62,16 +63,17 @@ export class LikeButtonComponent {
 
     request.subscribe({
       next: (updatedTrack) => {
-        const newLiked = !!userId && updatedTrack.likes.includes(userId);
+        const likes = Array.isArray(updatedTrack?.likes) ? updatedTrack.likes : [];
+        const newLiked = !!userId && likes.includes(userId);
         this.liked.set(newLiked);
-        this.likesCount.set(updatedTrack.likes.length);
+        this.likesCount.set(likes.length);
         this._track = updatedTrack;
         this.trackUpdated.emit(updatedTrack);
       },
       error: () => {
         // Rollback si erreur HTTP
         this.liked.set(wasLiked);
-        this.likesCount.update(c => wasLiked ? c + 1 : c - 1);
+        this.likesCount.update(c => wasLiked ? c + 1 : Math.max(0, c - 1));
         console.error('[LikeButton] Erreur lors du like, rollback appliqué');
       }
     });

@@ -283,6 +283,16 @@
   cursor: pointer;
 }
 
+.btn-eq {
+  color: var(--text-secondary) !important;
+  transition: color var(--transition-fast), transform var(--transition-fast) !important;
+}
+
+.btn-eq:hover {
+  color: var(--orchid-300) !important;
+  transform: scale(1.12);
+}
+
 /* RESPONSIVE */
 @media (max-width: 860px) {
   .player-bar {
