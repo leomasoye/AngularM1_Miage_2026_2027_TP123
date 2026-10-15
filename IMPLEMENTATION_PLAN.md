@@ -276,16 +276,31 @@ Transformer le prototype de gestion de pistes en application musicale sociale (t
 
 ---
 
-## Étape 11 : Arrière-plan Audio-Réactif & Particules (Immersion Visuelle) 📋 [À VENIR]
+## Étape 11 : Arrière-plan Audio-Réactif & Particules (Immersion Visuelle) ✅ [TERMINÉE]
 **Goal:** Créer une ambiance visuelle vivante où l'interface respire au rythme de la musique.
 
-#### [NEW] Frontend `AudioReactiveGlowComponent` ou directive
-- Récupération de l'énergie des basses (basses fréquences 20-120 Hz) via `AnalyserNode.getByteFrequencyData()`.
-- Lissage temporel (smoothing) pour éviter les scintillements brusques.
-- Animation subtile des halos lumineux d'arrière-plan (bloom orchidée/bleu) synchronisée avec le kick et la basse.
-- Option de désactivation dans les paramètres pour les utilisateurs sensibles ou soucieux de la batterie.
+#### [NEW] Frontend `AudioReactiveGlowComponent`, `GlowService` & Particules
+- `AudioReactiveGlowComponent` :
+  - Canvas HTML5 responsive (adapté aux écrans Retina / HiDPI via `window.devicePixelRatio`).
+  - Analyse spectrale temps réel via `AnalyserNode.getByteFrequencyData()`.
+  - Détection dynamique des fréquences : sub-basses & basses (20-150 Hz), médiums et présence.
+  - Lissage temporel asymétrique (attaque instantanée sur le kick/beat, décroissance exponentielle douce) évitant tout scintillement agressif.
+  - Halos lumineux signature From Zero (Orbe orchidée sur les kicks, Orbe bleu électrique sur les mélodies, et Halo central d'ancrage sub-bass).
+  - Champ de particules réactives (36 braises ambiantes From Zero) dérivant organiquement, accélérant et s'illuminant au rythme des percussions.
+  - Boucle `requestAnimationFrame` strictement exécutée hors zone Angular (`runOutsideAngular`), avec arrêt instantané en cas de pause (`!isPlaying()`), de masquage de l'onglet (`document.hidden`), ou de désactivation utilisateur (0% d'utilisation CPU/GPU au repos).
+- `GlowService` :
+  - Service réactif gérant l'état d'activation (`isEnabled`), l'intensité (`intensity`), et l'affichage des particules (`particlesEnabled`).
+  - Persistance automatique des préférences utilisateur dans le `localStorage` (`from_zero_reactive_glow`).
+- Contrôles utilisateur :
+  - Bouton interactif dédié dans `PlayerBarComponent` (`btn-glow` avec icônes `auto_awesome` / `blur_off`) permettant d'activer ou désactiver l'ambiance visuelle en un clic.
+- Intégration globale :
+  - Composant monté en arrière-plan global dans `AppComponent`, illuminant subtilement les surfaces glassmorphic et les cartes de l'application.
 
-**DoD attendue:** L'arrière-plan pulse subtilement et élégamment au rythme des basses sans aucun impact négatif sur les performances de l'application (60 FPS constant).
+**DoD validée :**
+- L'arrière-plan pulse subtilement et élégamment au rythme des basses et des kicks à 60 FPS constants sans impact sur les performances.
+- L'activation / désactivation instantanée fonctionne avec persistance des préférences.
+- 100% des tests unitaires au vert : 67/67 tests frontend passés (19 suites de tests) et 13/13 tests backend.
+- Build de production frontend Angular sans erreur (`ng build` code 0).
 
 ---
 

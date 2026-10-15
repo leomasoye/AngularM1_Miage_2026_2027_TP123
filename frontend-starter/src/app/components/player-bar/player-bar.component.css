@@ -318,6 +318,23 @@
   box-shadow: 0 0 6px rgba(155, 63, 212, 0.9);
 }
 
+/* BOUTON AMBIANCE AUDIO-RÉACTIVE */
+.btn-glow {
+  color: var(--text-secondary) !important;
+  position: relative !important;
+  transition: color var(--transition-fast), transform var(--transition-fast) !important;
+}
+
+.btn-glow:hover {
+  color: var(--orchid-300) !important;
+  transform: scale(1.08);
+}
+
+.btn-glow.active-mode {
+  color: var(--orchid-300) !important;
+  filter: drop-shadow(0 0 6px rgba(155, 63, 212, 0.7));
+}
+
 /* BOUTON ÉGALISEUR & EFFETS SPATIAUX */
 .btn-eq {
   color: var(--text-secondary) !important;

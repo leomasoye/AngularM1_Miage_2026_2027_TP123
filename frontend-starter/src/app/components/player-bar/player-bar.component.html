@@ -229,6 +229,17 @@
         </div>
       </div>
 
+      <!-- Bouton Ambiance Audio-Réactive (Étape 11) -->
+      <button
+        mat-icon-button
+        class="btn-glow"
+        [class.active-mode]="glowService.isEnabled()"
+        (click)="glowService.toggleGlow()"
+        [title]="glowService.isEnabled() ? 'Ambiance audio-réactive : activée (cliquer pour désactiver)' : 'Ambiance audio-réactive : désactivée (cliquer pour activer)'"
+      >
+        <mat-icon>{{ glowService.isEnabled() ? 'auto_awesome' : 'blur_off' }}</mat-icon>
+      </button>
+
       <button
         mat-icon-button
         class="btn-eq"

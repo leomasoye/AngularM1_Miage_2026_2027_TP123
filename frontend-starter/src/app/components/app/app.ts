@@ -8,10 +8,18 @@ import { catchError, filter, switchMap } from 'rxjs/operators';
 
 import { PlayerBarComponent } from '../player-bar/player-bar.component';
 import { AvatarComponent } from '../../shared/components/avatar/avatar.component';
+import { AudioReactiveGlowComponent } from '../audio-reactive-glow/audio-reactive-glow.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, PlayerBarComponent, AvatarComponent],
+  imports: [
+    RouterLink,
+    RouterLinkActive,
+    RouterOutlet,
+    PlayerBarComponent,
+    AvatarComponent,
+    AudioReactiveGlowComponent,
+  ],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })

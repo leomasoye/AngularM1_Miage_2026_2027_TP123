@@ -15,6 +15,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { PlayerService } from '../../shared/services/player.service';
+import { GlowService } from '../../shared/services/glow.service';
 import { Track } from '../../shared/models/track.model';
 import { LikeButtonComponent } from '../like-button/like-button';
 import { EqualizerComponent } from '../equalizer/equalizer.component';
@@ -37,6 +38,7 @@ import { WaveformComponent } from '../waveform/waveform.component';
 })
 export class PlayerBarComponent implements OnInit, OnDestroy {
   readonly player = inject(PlayerService);
+  readonly glowService = inject(GlowService);
   private readonly dialog = inject(MatDialog);
   private readonly ngZone = inject(NgZone);
 
