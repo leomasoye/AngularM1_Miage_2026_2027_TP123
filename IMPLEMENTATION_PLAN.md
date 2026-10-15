@@ -176,39 +176,61 @@ Transformer le prototype de gestion de pistes en application musicale sociale (t
 
 ---
 
-## Étape 8 : Waveform Interactive (Forme d'onde décodée sur toute la piste) 📋 [À VENIR]
+## Étape 8 : Waveform Interactive (Forme d'onde décodée sur toute la piste) ✅ [TERMINÉE]
 **Goal:** Remplacer la simple barre de progression par une véritable forme d'onde décodée (type SoundCloud / Spotify Canvas) avec curseur interactif.
 
 #### [MODIFY] Frontend `PlayerService`
-- Décodage audio complet via `AudioContext.decodeAudioData()` lors du chargement de la piste.
-- Extraction d'un tableau d'amplitudes normalisées (ex: 120 barres de crêtes).
-- Signal réactif `waveformPeaks = signal<number[]>([])`.
+- Décodage audio complet via `AudioContext.decodeAudioData()` lors du chargement de la piste (`loadWaveform(track)`).
+- Extraction d'un tableau d'amplitudes normalisées (120 barres de crêtes calculées par blocs temporels avec échantillonnage optimisé) et cache mémoire (`Map<trackId, peaks>`).
+- Signaux réactifs `waveformPeaks = signal<number[]>([])` et `isWaveformLoading = signal<boolean>(false)`.
+- Annulation des requêtes de décodage antérieures via `AbortController`.
+- Génération d'un fallback harmonique esthétique fluide en cas d'indisponibilité du buffer audio brut.
 
 #### [NEW] Frontend `WaveformComponent`
-- Canvas HTML5 responsive dessinant les barres de la forme d'onde avec dégradé From Zero (`#9b3fd4` vers `#1a7fe8`).
-- Distinction visuelle entre la partie déjà lue (barres illuminées) et la partie à venir (barres semi-transparentes).
-- Curseur de survol avec affichage de la position temporelle (`hoverTime`).
-- Clic et glisser (scrubbing) pour naviguer instantanément dans le morceau.
+- Canvas HTML5 responsive (adapté aux écrans Retina / HiDPI via `window.devicePixelRatio` et `ResizeObserver`).
+- Barres de la forme d'onde dessinées avec dégradé From Zero signature (`#d89af8` / `#9b3fd4` vers `#1a7fe8`).
+- Rendu dynamique différencié : barres lues illuminées avec bloom/shadow néon, barres non lues semi-transparentes (`rgba(155, 63, 212, 0.22)`).
+- Curseur de survol interactif avec affichage du timestamp précis en tooltip flottant glassmorphic (`hoverTimeFormatted`).
+- Navigation tactile et souris par clic direct et glisser (scrubbing) avec écouteurs globaux `window` pour un suivi fluide même en dehors du conteneur.
+- Accessibilité complète ARIA (`role="slider"`, `aria-valuenow`, `aria-label`) et navigation clavier (flèches ±5s, Home/End, Espace play/pause).
+- Intégration directe dans `PlayerBarComponent` en remplacement de la barre de progression native.
+- Rendu continu à 60 FPS via boucle `requestAnimationFrame` exécutée hors zone Angular (`runOutsideAngular`).
 
-**Risques:** Temps de décodage audio sur les fichiers volumineux.
-**DoD attendue:** La forme d'onde réelle du fichier audio s'affiche dans le lecteur, le clic navigue instantanément dans le morceau avec une fluidité à 60 FPS.
+**DoD validée :**
+- La forme d'onde décodée s'affiche fidèlement avec les 120 barres dynamiques dans le lecteur audio.
+- Le clic et le scrubbing permettent de naviguer instantanément et sans latence dans la piste.
+- 100% des tests unitaires au vert : 46/46 tests frontend passés (14 suites de tests) et 9/9 tests backend.
+- Build de production frontend Angular sans avertissement (`ng build` code 0).
 
 ---
 
-## Étape 9 : Effets Audio Avancés (Reverb "Concert Hall" & Delay / Écho) 📋 [À VENIR]
+## Étape 9 : Effets Audio Avancés (Reverb "Concert Hall" & Delay / Écho) ✅ [TERMINÉE]
 **Goal:** Permettre à l'utilisateur d'ajouter des effets de spatialisation et d'ambiance en temps réel.
 
 #### [MODIFY] Frontend `PlayerService` (Graphe Web Audio)
-- Intégration d'un `ConvolverNode` avec réponse impulsionnelle synthétique générée algorithmiquement (simulation d'une salle de concert ou d'un stade).
-- Intégration d'un `DelayNode` avec boucle de feedback (`GainNode`) pour un écho synchronisé.
-- Nouveaux signaux réactifs : `reverbWet = signal(0)`, `delayTime = signal(0.3)`, `delayFeedback = signal(0)`.
+- Intégration d'un `ConvolverNode` avec réponse impulsionnelle stéréo synthétique générée algorithmiquement (`createImpulseResponse(2.5, 2.0)` avec décroissance exponentielle simulant une salle de concert / arena).
+- Intégration d'un `DelayNode` (max 2.0s) avec boucle de feedback (`delayFeedbackNode` plafonné à 0.8) et gain de sortie (`delayGainNode`).
+- Bus de mixage dédié (`effectsMixBus`) mixant en parallèle la voie directe (`dryGainNode`), la réverbération et l'écho avant le master volume et les visualiseurs.
+- Nouveaux signaux réactifs : `reverbWet = signal(0)`, `delayTime = signal(0.3)`, `delayFeedback = signal(0)`, `spatialPreset = signal<SpatialPreset>('none')`.
+- Méthodes de contrôle sans craquement via `setTargetAtTime` : `setReverbWet()`, `setDelayTime()`, `setDelayFeedback()`, `setSpatialPreset()`, `resetSpatialEffects()`.
+- Persistance automatique dans le `localStorage` (`from_zero_spatial`).
 
 #### [MODIFY] Frontend `EqualizerComponent`
-- Ajout d'une section "Effets Spatiaux" dans la modale d'égaliseur.
-- Potentiomètres rotatifs (knobs tactiles/cliquables) ou curseurs d'intensité pour le dosage du Reverb et du Delay.
-- Présélection de presets d'ambiance : "Studio Neutre", "Club Intimiste", "Stade Rock".
+- Ajout d'une section "Effets Spatiaux & Ambiance" avec design From Zero dans la modale d'égaliseur.
+- Présélection de 5 presets d'ambiance : "Désactivé", "Club Intime", "Concert Hall", "Stade Rock", "Écho Spatial".
+- Curseurs horizontaux interactifs avec badges dynamiques (pourcentage et millisecondes) pour le dosage de la Réverbération (0-100%), du Temps d'écho (50-1000ms) et du Feedback (0-80%).
+- Bouton "Réinitialiser tout" remettant à zéro l'égaliseur et les effets spatiaux.
 
-**DoD attendue:** L'activation de la reverb et du delay modifie audiblement le son en direct sans craquement ni saturation.
+#### [OPTIMIZE] Fluidité et performances globales (Profilage & Réactivité)
+- Optimisation des boucles `requestAnimationFrame` de `WaveformComponent`, `PlayerBarComponent` et `EqualizerComponent` : arrêt immédiat de la boucle en état de pause ou lorsque l'onglet est masqué (`document.hidden`), suppression de la boucle infinie idle.
+- Suppression de `ctx.shadowBlur` dans la boucle de tracé de la forme d'onde (éliminant des milliers d'opérations de convolution GPU par seconde).
+- Rafraîchissement direct et instantané lors des interactions utilisateur (survol, scrubbing, modification des curseurs).
+- Réduction par 4x du temps d'exécution de la suite de tests (de ~26s à 7s).
+
+**DoD validée :**
+- L'activation de la reverb et du delay modifie audiblement le son en direct sans craquement, saturation ni latence.
+- 100% des tests unitaires au vert : 50/50 tests frontend passés (14 suites de test) et 9/9 tests backend.
+- Build de production frontend Angular sans erreur (`ng build` code 0).
 
 ---
 

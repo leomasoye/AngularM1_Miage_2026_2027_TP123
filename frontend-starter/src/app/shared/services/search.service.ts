@@ -5,7 +5,7 @@ import { Track } from '../models/track.model';
 import { User } from '../models/user.model';
 
 export interface SearchResults {
-  users: Pick<User, 'id' | 'name'>[];
+  users: Pick<User, 'id' | 'name' | 'avatarUrl'>[];
   tracks: Track[];
 }
 

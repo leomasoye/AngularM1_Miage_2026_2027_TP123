@@ -1,42 +1,91 @@
-<section class="animate-in" style="max-width: 1200px; margin: 0 auto; padding: 2rem;">
-  <div class="hero" style="margin-bottom: 2rem;">
-    <p class="text-label" style="color: var(--orchid-300)">RECHERCHE</p>
-    <h1 class="text-display">Rechercher</h1>
-    
-    <div style="margin-top: 1.5rem; max-width: 600px; display: flex; gap: 1rem;">
-      <input #searchInput type="text" [value]="query()" (input)="onSearchInput($event)" (keyup.enter)="updateQuery(searchInput.value)" placeholder="Titres, Artistes, Amis..." class="search-input" style="flex: 1; padding: 1rem; border-radius: var(--radius-full); border: 1px solid var(--border-subtle); background: var(--bg-surface); color: var(--text-primary); font-size: 1.1rem; outline: none; transition: border-color var(--transition-fast);">
-      <button mat-flat-button class="btn-primary" (click)="updateQuery(searchInput.value)" style="border-radius: var(--radius-full); padding: 0 2rem;">
+<section class="search-page animate-in">
+  <div class="hero">
+    <p class="text-label" style="color: var(--orchid-300)">RECHERCHE & CATALOGUE</p>
+    <h1 class="text-display">Explorer</h1>
+    <p class="hero-subtitle">
+      @if (query()) {
+        Résultats de la recherche pour « {{ query() }} »
+      } @else {
+        Découvrez les pistes publiques de la communauté et connectez-vous avec d'autres artistes.
+      }
+    </p>
+
+    <div class="search-bar-container">
+      <div class="search-input-wrapper">
+        <mat-icon class="search-input-icon">search</mat-icon>
+        <input
+          #searchInput
+          type="text"
+          [value]="query()"
+          (input)="onSearchInput($event)"
+          (keyup.enter)="updateQuery(searchInput.value)"
+          placeholder="Rechercher un titre, un artiste (ex: Bruno Mars)..."
+          class="search-input"
+        />
+        @if (query()) {
+          <button
+            type="button"
+            class="btn-clear"
+            (click)="clearSearch(); searchInput.value = ''"
+            title="Effacer la recherche"
+          >
+            <mat-icon style="font-size: 20px; width: 20px; height: 20px;">close</mat-icon>
+          </button>
+        }
+      </div>
+      <button
+        mat-flat-button
+        class="btn-primary btn-search"
+        (click)="updateQuery(searchInput.value)"
+      >
         <mat-icon>search</mat-icon>
+        <span>Filtrer</span>
       </button>
     </div>
+
+    @if (query()) {
+      <div class="status-badge">
+        <mat-icon style="font-size: 16px; width: 16px; height: 16px;">filter_alt</mat-icon>
+        <span>Filtre actif : « {{ query() }} » ({{ results().tracks.length }} pistes, {{ results().users.length }} profils)</span>
+      </div>
+    }
   </div>
 
   @if (loading()) {
     <div style="text-align: center; padding: 4rem;">
       <mat-spinner diameter="40" style="margin: 0 auto;"></mat-spinner>
-      <p class="text-muted" style="margin-top: 1rem;">Recherche en cours...</p>
+      <p class="text-muted" style="margin-top: 1rem;">Chargement des pistes et artistes...</p>
     </div>
   } @else if (error()) {
-    <div class="alert-error" style="background: rgba(255,82,82,0.1); border: 1px solid #ff5252; padding: 1rem; border-radius: var(--radius-sm); color: #ff5252;">
+    <div
+      class="alert-error"
+      style="background: rgba(255,82,82,0.1); border: 1px solid #ff5252; padding: 1rem; border-radius: var(--radius-sm); color: #ff5252;"
+    >
       {{ error() }}
     </div>
   } @else {
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
-      
-      <!-- Tracks Results -->
-      <article class="glass-card" style="padding: 1.5rem;">
-        <h2 class="text-heading" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem;">
-          <mat-icon color="primary">music_note</mat-icon> Pistes publiques
-        </h2>
-        
-        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+    <div class="results-grid">
+
+      <!-- Pistes publiques -->
+      <article class="glass-card results-card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <mat-icon color="primary">music_note</mat-icon>
+            <span>{{ query() ? 'Pistes trouvées' : 'Pistes publiques disponibles' }}</span>
+          </h2>
+          <span class="count-chip">{{ results().tracks.length }}</span>
+        </div>
+
+        <div class="items-list">
           @for (track of results().tracks; track track.id) {
-            <div class="track-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border-radius: var(--radius-sm); background: var(--bg-surface); border: 1px solid rgba(255,255,255,0.05);">
-              <div>
-                <div class="text-body" style="font-weight: 600;">{{ track.title }}</div>
-                <div class="text-small text-muted">Par {{ track.ownerName }}</div>
+            <div class="track-row">
+              <div class="track-meta">
+                <div class="track-info">
+                  <div class="track-title" [title]="track.title">{{ track.title }}</div>
+                  <div class="track-artist">Par {{ track.ownerName }}</div>
+                </div>
               </div>
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <div class="track-actions">
                 <button
                   mat-icon-button
                   (click)="addToQueue(track)"
@@ -56,28 +105,59 @@
               </div>
             </div>
           } @empty {
-            <p class="text-muted text-center" style="padding: 1rem;">Aucune piste trouvée.</p>
+            <div class="empty-state">
+              <mat-icon style="font-size: 36px; width: 36px; height: 36px; opacity: 0.5;">library_music</mat-icon>
+              <p style="margin-top: 0.5rem;">
+                @if (query()) {
+                  Aucune piste ne correspond à « {{ query() }} ».
+                } @else {
+                  Aucune piste publique disponible pour l'instant.
+                }
+              </p>
+            </div>
           }
         </div>
       </article>
 
-      <!-- Users Results -->
-      <article class="glass-card" style="padding: 1.5rem;">
-        <h2 class="text-heading" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem;">
-          <mat-icon color="primary">people</mat-icon> Utilisateurs
-        </h2>
-        
-        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+      <!-- Utilisateurs & Artistes -->
+      <article class="glass-card results-card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <mat-icon color="primary">people</mat-icon>
+            <span>{{ query() ? 'Membres trouvés' : 'Artistes & Communauté' }}</span>
+          </h2>
+          <span class="count-chip">{{ results().users.length }}</span>
+        </div>
+
+        <div class="items-list">
           @for (user of results().users; track user.id) {
-            <div class="user-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border-radius: var(--radius-sm); background: var(--bg-surface); border: 1px solid rgba(255,255,255,0.05);">
-              <div style="display: flex; align-items: center; gap: 1rem;">
-                <app-avatar [name]="user.name" size="sm"></app-avatar>
-                <div class="text-body" style="font-weight: 600;">{{ user.name }}</div>
+            <div class="user-row">
+              <div class="user-info">
+                <app-avatar [name]="user.name" [avatarUrl]="user.avatarUrl" size="sm"></app-avatar>
+                <div class="user-name">{{ user.name }}</div>
               </div>
-              <button mat-icon-button color="primary" (click)="addFriend(user.id)" title="Ajouter en ami"><mat-icon>person_add</mat-icon></button>
+              <div class="user-actions">
+                <button
+                  mat-icon-button
+                  color="primary"
+                  (click)="addFriend(user.id)"
+                  title="Ajouter en ami"
+                >
+                  <mat-icon>person_add</mat-icon>
+                </button>
+              </div>
             </div>
           } @empty {
-            <p class="text-muted text-center" style="padding: 1rem;">Aucun utilisateur trouvé.</p>
+            <div class="empty-state">
+              <mat-icon style="font-size: 36px; width: 36px; height: 36px; opacity: 0.5;">group_off</mat-icon>
+              <p style="margin-top: 0.5rem;">
+                @if (query()) {
+                  Aucun membre ne correspond à « {{ query() }} ».
+                } @else {
+                  Aucun membre disponible.
+                }
+              </p>
+            </div>
           }
         </div>
       </article>
@@ -85,5 +165,3 @@
     </div>
   }
 </section>
-
-

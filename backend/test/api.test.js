@@ -41,3 +41,12 @@ test("schémas Mongoose et relation", () => {
   assert.equal(t.title, "Blues");
   assert.equal(Track.schema.path("ownerId").options.ref, "User");
 });
+
+test("GET /api/search retourne un catalogue vide ou peuplé sans erreur 401", async () => {
+  const r = await fetch(base + "/api/search");
+  assert.equal(r.status, 200);
+  const data = await r.json();
+  assert.ok(Array.isArray(data.users));
+  assert.ok(Array.isArray(data.tracks));
+});
+

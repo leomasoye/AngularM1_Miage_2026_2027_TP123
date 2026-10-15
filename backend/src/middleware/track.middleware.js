@@ -2,9 +2,10 @@ import mongoose from "mongoose";
 import { Share } from "../models/Share.js";
 
 export async function canAccessTrack(userId, track) {
-  if (!track || !userId) return false;
-  if (track.ownerId.toString() === userId) return true;
+  if (!track) return false;
   if (track.visibility === "public") return true;
+  if (!userId) return false;
+  if (track.ownerId?.toString() === userId) return true;
 
   if (mongoose.connection.readyState !== 1) {
     return false;

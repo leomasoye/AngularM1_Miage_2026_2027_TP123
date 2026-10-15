@@ -4,7 +4,7 @@ import path from "node:path";
 import { Track } from "../models/Track.js";
 import { Share } from "../models/Share.js";
 import { Friendship } from "../models/Friendship.js";
-import { auth } from "../middleware/auth.middleware.js";
+import { auth, optionalAuth } from "../middleware/auth.middleware.js";
 import { canAccessTrack, requireOwner } from "../middleware/track.middleware.js";
 import { upload, UPLOADS } from "../middleware/upload.middleware.js";
 
@@ -128,9 +128,10 @@ router.options("/:id/audio", (req, res) => {
   res.sendStatus(204);
 });
 
-router.get("/:id/audio", auth, loadTrack, async (req, res, next) => {
+router.get("/:id/audio", optionalAuth, loadTrack, async (req, res, next) => {
   try {
-    if (!(await canAccessTrack(req.auth.sub, req.track))) {
+    const userId = req.auth?.sub;
+    if (!(await canAccessTrack(userId, req.track))) {
       return res.status(404).json({ message: "Piste inconnue" }); // Renvoie 404 comme demandé
     }
 
@@ -139,7 +140,7 @@ router.get("/:id/audio", auth, loadTrack, async (req, res, next) => {
     res.setHeader("Access-Control-Allow-Headers", "Range, Authorization");
     res.setHeader("Access-Control-Expose-Headers", "Content-Length, Content-Range, Accept-Ranges");
     res.setHeader("Accept-Ranges", "bytes");
-    res.setHeader("Cache-Control", "private, max-age=3600");
+    res.setHeader("Cache-Control", "no-cache");
 
     const audioPath = path.join(UPLOADS, req.track.storedName);
     res.type(req.track.mimeType);

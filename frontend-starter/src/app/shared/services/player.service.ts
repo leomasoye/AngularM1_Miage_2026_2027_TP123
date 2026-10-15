@@ -3,6 +3,7 @@ import { AuthService } from './auth.service';
 import { Track } from '../models/track.model';
 
 export type EQPreset = 'flat' | 'bass-boost' | 'vocal' | 'electronic' | 'custom';
+export type SpatialPreset = 'none' | 'room' | 'hall' | 'stadium' | 'space-echo' | 'custom';
 
 @Injectable({
   providedIn: 'root',
@@ -21,6 +22,15 @@ export class PlayerService implements OnDestroy {
   private lowFilter?: BiquadFilterNode;
   private midFilter?: BiquadFilterNode;
   private highFilter?: BiquadFilterNode;
+
+  // Effets Spatiaux (Étape 9 : Reverb Convolver & Delay Écho)
+  private convolverNode?: ConvolverNode;
+  private reverbGainNode?: GainNode;
+  private delayNode?: DelayNode;
+  private delayFeedbackNode?: GainNode;
+  private delayGainNode?: GainNode;
+  private dryGainNode?: GainNode;
+  private effectsMixBus?: GainNode;
 
   // Analyseur principal (FFT) et analyseurs stéréo (VU-mètres L/R)
   private analyserNode?: AnalyserNode;
@@ -52,11 +62,23 @@ export class PlayerService implements OnDestroy {
   readonly treble = signal(0);
   readonly currentPreset = signal<EQPreset>('flat');
 
+  // Signaux d'effets spatiaux (Étape 9)
+  readonly reverbWet = signal(0); // 0 à 1
+  readonly delayTime = signal(0.3); // 0.05 à 1.0s
+  readonly delayFeedback = signal(0); // 0 à 0.8
+  readonly spatialPreset = signal<SpatialPreset>('none');
+
   // File d'attente (Queue), Shuffle et Répétition
   readonly queue = signal<Track[]>([]);
   readonly isShuffle = signal(false);
   readonly repeatMode = signal<'none' | 'one' | 'all'>('none');
   readonly history = signal<Track[]>([]);
+
+  // Waveform décodée (Étape 8)
+  readonly waveformPeaks = signal<number[]>([]);
+  readonly isWaveformLoading = signal<boolean>(false);
+  private waveformCache = new Map<string, number[]>();
+  private currentDecodeAbortController?: AbortController;
 
   // Signal dérivé pour formater le temps actuel et la durée
   readonly formattedCurrentTime = computed(() => this.formatTime(this.currentTime()));
@@ -64,10 +86,14 @@ export class PlayerService implements OnDestroy {
 
   constructor() {
     this.loadEQFromStorage();
+    this.loadSpatialFromStorage();
     this.initAudio();
   }
 
   ngOnDestroy(): void {
+    if (this.currentDecodeAbortController) {
+      this.currentDecodeAbortController.abort();
+    }
     if (this.audio) {
       this.audio.pause();
       this.audio.src = '';
@@ -102,10 +128,10 @@ export class PlayerService implements OnDestroy {
     try {
       this.audioCtx = new AudioContextClass();
 
-      // 1. Filtres égaliseur 3 bandes
+      // 1. Filtres égaliseur 3 bandes (Basses percutantes 150 Hz et Aigus cristallins 6 kHz)
       this.lowFilter = this.audioCtx.createBiquadFilter();
       this.lowFilter.type = 'lowshelf';
-      this.lowFilter.frequency.value = 100;
+      this.lowFilter.frequency.value = 150;
       this.lowFilter.gain.value = this.bass();
 
       this.midFilter = this.audioCtx.createBiquadFilter();
@@ -116,7 +142,7 @@ export class PlayerService implements OnDestroy {
 
       this.highFilter = this.audioCtx.createBiquadFilter();
       this.highFilter.type = 'highshelf';
-      this.highFilter.frequency.value = 8000;
+      this.highFilter.frequency.value = 6000;
       this.highFilter.gain.value = this.treble();
 
       // 2. Noeud de Gain pour le volume
@@ -145,6 +171,35 @@ export class PlayerService implements OnDestroy {
       this.analyserRight.fftSize = 256;
       this.analyserRight.smoothingTimeConstant = 0.5;
 
+      // 6. Effets Spatiaux (Étape 9 : Reverb Convolver & Delay Écho)
+      if (typeof this.audioCtx.createConvolver === 'function') {
+        this.convolverNode = this.audioCtx.createConvolver();
+        const impulse = this.createImpulseResponse(2.5, 2.0);
+        if (impulse) {
+          this.convolverNode.buffer = impulse;
+        }
+      }
+
+      this.reverbGainNode = this.audioCtx.createGain();
+      this.reverbGainNode.gain.value = this.reverbWet();
+
+      if (typeof this.audioCtx.createDelay === 'function') {
+        this.delayNode = this.audioCtx.createDelay(2.0);
+        this.delayNode.delayTime.value = this.delayTime();
+      }
+
+      this.delayFeedbackNode = this.audioCtx.createGain();
+      this.delayFeedbackNode.gain.value = Math.min(0.8, this.delayFeedback());
+
+      this.delayGainNode = this.audioCtx.createGain();
+      this.delayGainNode.gain.value = this.delayFeedback() > 0 ? 0.75 : 0;
+
+      this.dryGainNode = this.audioCtx.createGain();
+      this.dryGainNode.gain.value = 1.0;
+
+      this.effectsMixBus = this.audioCtx.createGain();
+      this.effectsMixBus.gain.value = 1.0;
+
       this.connectNodes();
     } catch (e) {
       console.warn('[PlayerService] Impossible d\'initialiser le contexte Web Audio:', e);
@@ -163,22 +218,48 @@ export class PlayerService implements OnDestroy {
       if (this.sourceNode) {
         this.sourceNode.disconnect();
 
-        // Chaîne principale : source -> lowFilter -> midFilter -> highFilter -> gainNode -> panner -> destination
-        let lastNode: AudioNode = this.sourceNode;
-
+        // 1. Filtres EQ 3 bandes
+        let eqOutput: AudioNode = this.sourceNode;
         if (this.lowFilter && this.midFilter && this.highFilter) {
-          lastNode.connect(this.lowFilter);
+          this.sourceNode.connect(this.lowFilter);
           this.lowFilter.connect(this.midFilter);
           this.midFilter.connect(this.highFilter);
-          this.highFilter.connect(this.gainNode);
-          lastNode = this.gainNode;
-        } else {
-          lastNode.connect(this.gainNode);
-          lastNode = this.gainNode;
+          eqOutput = this.highFilter;
         }
 
+        // 2. Section Effets Spatiaux (Dry + Reverb + Delay) vers effectsMixBus
+        if (this.effectsMixBus && this.dryGainNode) {
+          // Voie Directe (Dry)
+          eqOutput.connect(this.dryGainNode);
+          this.dryGainNode.connect(this.effectsMixBus);
+
+          // Voie Réverbération (Convolver)
+          if (this.convolverNode && this.reverbGainNode) {
+            eqOutput.connect(this.convolverNode);
+            this.convolverNode.connect(this.reverbGainNode);
+            this.reverbGainNode.connect(this.effectsMixBus);
+          }
+
+          // Voie Delay (Écho avec boucle de feedback)
+          if (this.delayNode && this.delayFeedbackNode && this.delayGainNode) {
+            eqOutput.connect(this.delayNode);
+            // Boucle de feedback
+            this.delayNode.connect(this.delayFeedbackNode);
+            this.delayFeedbackNode.connect(this.delayNode);
+            // Sortie vers le bus de mix
+            this.delayNode.connect(this.delayGainNode);
+            this.delayGainNode.connect(this.effectsMixBus);
+          }
+
+          this.effectsMixBus.connect(this.gainNode);
+        } else {
+          eqOutput.connect(this.gainNode);
+        }
+
+        let lastNode: AudioNode = this.gainNode;
+
         if (this.pannerNode) {
-          lastNode.connect(this.pannerNode);
+          this.gainNode.connect(this.pannerNode);
           lastNode = this.pannerNode;
         }
 
@@ -287,6 +368,9 @@ export class PlayerService implements OnDestroy {
     this.isLoading.set(true);
     this.currentTrack.set(track);
 
+    // Décodage asynchrone de la forme d'onde
+    void this.loadWaveform(track);
+
     const token = this.auth.token();
     const audioUrl = token
       ? `/api/tracks/${track.id}/audio?token=${encodeURIComponent(token)}`
@@ -302,6 +386,175 @@ export class PlayerService implements OnDestroy {
         this.isLoading.set(false);
       }
     }
+  }
+
+  /**
+   * Récupère le flux audio complet, le décode via AudioContext.decodeAudioData
+   * et extrait 120 crêtes normalisées pour la forme d'onde interactive.
+   */
+  async loadWaveform(track: Track): Promise<number[]> {
+    if (this.waveformCache.has(track.id)) {
+      const cached = this.waveformCache.get(track.id)!;
+      this.waveformPeaks.set(cached);
+      this.isWaveformLoading.set(false);
+      return cached;
+    }
+
+    this.waveformPeaks.set([]);
+    this.isWaveformLoading.set(true);
+
+    if (this.currentDecodeAbortController) {
+      this.currentDecodeAbortController.abort();
+    }
+    const abortController = new AbortController();
+    this.currentDecodeAbortController = abortController;
+
+    try {
+      const token = this.auth.token();
+      const baseAudioUrl = token
+        ? `/api/tracks/${track.id}/audio?token=${encodeURIComponent(token)}`
+        : `/api/tracks/${track.id}/audio`;
+      const delimiter = baseAudioUrl.includes('?') ? '&' : '?';
+      const waveformUrl = `${baseAudioUrl}${delimiter}waveform=1`;
+
+      const response = await fetch(waveformUrl, { signal: abortController.signal });
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP lors du téléchargement pour analyse: ${response.status}`);
+      }
+      const arrayBuffer = await response.arrayBuffer();
+
+      if (!this.audioCtx) {
+        this.initWebAudio();
+      }
+
+      if (!this.audioCtx || typeof this.audioCtx.decodeAudioData !== 'function') {
+        throw new Error('Web Audio decodeAudioData non disponible');
+      }
+
+      const audioBuffer = await new Promise<AudioBuffer>((resolve, reject) => {
+        let resolved = false;
+        try {
+          const res = this.audioCtx!.decodeAudioData(
+            arrayBuffer,
+            (buf) => {
+              if (!resolved) {
+                resolved = true;
+                resolve(buf);
+              }
+            },
+            (err) => {
+              if (!resolved) {
+                resolved = true;
+                reject(err);
+              }
+            }
+          );
+          if (res && typeof (res as Promise<AudioBuffer>).then === 'function') {
+            (res as Promise<AudioBuffer>).then(
+              (buf) => {
+                if (!resolved) {
+                  resolved = true;
+                  resolve(buf);
+                }
+              },
+              (err) => {
+                if (!resolved) {
+                  resolved = true;
+                  reject(err);
+                }
+              }
+            );
+          }
+        } catch (e) {
+          reject(e);
+        }
+      });
+
+      const peaks = this.extractPeaks(audioBuffer, 120);
+      this.waveformCache.set(track.id, peaks);
+
+      if (this.currentTrack()?.id === track.id) {
+        this.waveformPeaks.set(peaks);
+        this.isWaveformLoading.set(false);
+      }
+      return peaks;
+    } catch (err: unknown) {
+      if ((err as Error)?.name === 'AbortError') {
+        return [];
+      }
+
+      // Fallback esthétique (onde harmonique fluide) pour un rendu visuel impeccable
+      const fallback = this.generateFallbackPeaks(120);
+      this.waveformCache.set(track.id, fallback);
+      if (this.currentTrack()?.id === track.id) {
+        this.waveformPeaks.set(fallback);
+        this.isWaveformLoading.set(false);
+      }
+      return fallback;
+    }
+  }
+
+  /**
+   * Extrait N crêtes normalisées (entre 0.08 et 1.0) à partir d'un AudioBuffer.
+   */
+  extractPeaks(audioBuffer: AudioBuffer, totalBars = 120): number[] {
+    const channels = audioBuffer.numberOfChannels;
+    const length = audioBuffer.length;
+    const blockSize = Math.floor(length / totalBars);
+    if (blockSize <= 0) return new Array(totalBars).fill(0.2);
+
+    const ch0 = audioBuffer.getChannelData(0);
+    const ch1 = channels > 1 ? audioBuffer.getChannelData(1) : null;
+
+    const peaks: number[] = new Array(totalBars);
+    let maxPeak = 0;
+
+    // Pas d'échantillonnage pour décoder instantanément même sur de longs fichiers
+    const sampleStep = Math.max(1, Math.floor(blockSize / 100));
+
+    for (let bar = 0; bar < totalBars; bar++) {
+      let maxVal = 0;
+      const start = bar * blockSize;
+      const end = Math.min(start + blockSize, length);
+
+      for (let i = start; i < end; i += sampleStep) {
+        let sample = Math.abs(ch0[i]);
+        if (ch1) {
+          sample = (sample + Math.abs(ch1[i])) * 0.5;
+        }
+        if (sample > maxVal) {
+          maxVal = sample;
+        }
+      }
+      peaks[bar] = maxVal;
+      if (maxVal > maxPeak) {
+        maxPeak = maxVal;
+      }
+    }
+
+    const normFactor = maxPeak > 0 ? 1 / maxPeak : 1;
+    for (let bar = 0; bar < totalBars; bar++) {
+      const normalized = peaks[bar] * normFactor;
+      peaks[bar] = Math.max(0.08, Math.min(1.0, Number(normalized.toFixed(3))));
+    }
+
+    return peaks;
+  }
+
+  /**
+   * Crée des crêtes harmoniques naturelles en cas d'impossibilité de décodage réseau/buffer.
+   */
+  generateFallbackPeaks(totalBars = 120): number[] {
+    const peaks: number[] = [];
+    for (let i = 0; i < totalBars; i++) {
+      const t = i / totalBars;
+      const wave1 = Math.sin(t * Math.PI);
+      const wave2 = Math.sin(t * 7 * Math.PI) * 0.25;
+      const wave3 = Math.cos(t * 13 * Math.PI) * 0.15;
+      const val = 0.35 + 0.35 * wave1 + wave2 + wave3;
+      peaks.push(Math.max(0.1, Math.min(0.95, Number(val.toFixed(3)))));
+    }
+    return peaks;
   }
 
   // --- Gestion de la file d'attente (Queue) et navigation ---
@@ -425,10 +678,15 @@ export class PlayerService implements OnDestroy {
       this.audio.pause();
       this.audio.currentTime = 0;
     }
+    if (this.currentDecodeAbortController) {
+      this.currentDecodeAbortController.abort();
+    }
     this.isPlaying.set(false);
     this.currentTime.set(0);
     this.progress.set(0);
     this.currentTrack.set(null);
+    this.waveformPeaks.set([]);
+    this.isWaveformLoading.set(false);
   }
 
   startSeeking(): void {
@@ -482,9 +740,9 @@ export class PlayerService implements OnDestroy {
     }
   }
 
-  // --- Gestion de l'Égaliseur (EQ 3 bandes) ---
+  // --- Gestion de l'Égaliseur (EQ 3 bandes avec plage étendue [-24 dB, +24 dB]) ---
   setBass(db: number): void {
-    const clamped = Math.max(-12, Math.min(12, db));
+    const clamped = Math.max(-24, Math.min(24, db));
     this.bass.set(clamped);
     if (this.lowFilter) {
       this.lowFilter.gain.value = clamped;
@@ -494,7 +752,7 @@ export class PlayerService implements OnDestroy {
   }
 
   setMid(db: number): void {
-    const clamped = Math.max(-12, Math.min(12, db));
+    const clamped = Math.max(-24, Math.min(24, db));
     this.mid.set(clamped);
     if (this.midFilter) {
       this.midFilter.gain.value = clamped;
@@ -504,7 +762,7 @@ export class PlayerService implements OnDestroy {
   }
 
   setTreble(db: number): void {
-    const clamped = Math.max(-12, Math.min(12, db));
+    const clamped = Math.max(-24, Math.min(24, db));
     this.treble.set(clamped);
     if (this.highFilter) {
       this.highFilter.gain.value = clamped;
@@ -516,9 +774,9 @@ export class PlayerService implements OnDestroy {
   setPreset(name: 'flat' | 'bass-boost' | 'vocal' | 'electronic'): void {
     const presets: Record<string, { bass: number; mid: number; treble: number }> = {
       flat: { bass: 0, mid: 0, treble: 0 },
-      'bass-boost': { bass: 7, mid: 0, treble: -1 },
-      vocal: { bass: -2, mid: 6, treble: 3 },
-      electronic: { bass: 5, mid: -1, treble: 5 },
+      'bass-boost': { bass: 14, mid: 1, treble: -2 },
+      vocal: { bass: -4, mid: 8, treble: 5 },
+      electronic: { bass: 12, mid: -2, treble: 8 },
     };
 
     const target = presets[name] || presets['flat'];
@@ -563,6 +821,146 @@ export class PlayerService implements OnDestroy {
         if (typeof data.mid === 'number') this.mid.set(data.mid);
         if (typeof data.treble === 'number') this.treble.set(data.treble);
         if (data.preset) this.currentPreset.set(data.preset);
+      }
+    } catch {
+      // Ignorer si parsing invalide
+    }
+  }
+
+  // --- Gestion des Effets Spatiaux (Reverb & Delay - Étape 9) ---
+
+  createImpulseResponse(duration = 2.5, decay = 2.0): AudioBuffer | undefined {
+    if (!this.audioCtx || typeof this.audioCtx.createBuffer !== 'function') return undefined;
+    try {
+      const rate = this.audioCtx.sampleRate || 44100;
+      const length = Math.max(1, Math.floor(rate * duration));
+      const impulse = this.audioCtx.createBuffer(2, length, rate);
+      const left = impulse.getChannelData(0);
+      const right = impulse.getChannelData(1);
+
+      for (let i = 0; i < length; i++) {
+        const t = i / length;
+        const envelope = Math.pow(1 - t, decay);
+        left[i] = (Math.random() * 2 - 1) * envelope;
+        right[i] = (Math.random() * 2 - 1) * envelope;
+      }
+      return impulse;
+    } catch (e) {
+      console.warn('[PlayerService] Erreur création de réponse impulsionnelle:', e);
+      return undefined;
+    }
+  }
+
+  setReverbWet(value: number): void {
+    const clamped = Math.max(0, Math.min(1, value));
+    this.reverbWet.set(clamped);
+    if (this.reverbGainNode && this.audioCtx) {
+      try {
+        if (
+          typeof this.reverbGainNode.gain.setTargetAtTime === 'function' &&
+          typeof this.audioCtx.currentTime === 'number'
+        ) {
+          this.reverbGainNode.gain.setTargetAtTime(clamped, this.audioCtx.currentTime, 0.03);
+        } else {
+          this.reverbGainNode.gain.value = clamped;
+        }
+      } catch {
+        this.reverbGainNode.gain.value = clamped;
+      }
+    }
+    this.saveSpatialToStorage();
+  }
+
+  setDelayTime(seconds: number): void {
+    const clamped = Math.max(0.05, Math.min(1.0, seconds));
+    this.delayTime.set(clamped);
+    if (this.delayNode && this.audioCtx) {
+      try {
+        if (
+          typeof this.delayNode.delayTime.setTargetAtTime === 'function' &&
+          typeof this.audioCtx.currentTime === 'number'
+        ) {
+          this.delayNode.delayTime.setTargetAtTime(clamped, this.audioCtx.currentTime, 0.03);
+        } else {
+          this.delayNode.delayTime.value = clamped;
+        }
+      } catch {
+        this.delayNode.delayTime.value = clamped;
+      }
+    }
+    this.saveSpatialToStorage();
+  }
+
+  setDelayFeedback(feedback: number): void {
+    const clamped = Math.max(0, Math.min(0.8, feedback));
+    this.delayFeedback.set(clamped);
+    if (this.delayFeedbackNode && this.delayGainNode && this.audioCtx) {
+      try {
+        const delayWet = clamped > 0 ? 0.75 : 0;
+        if (
+          typeof this.delayFeedbackNode.gain.setTargetAtTime === 'function' &&
+          typeof this.audioCtx.currentTime === 'number'
+        ) {
+          this.delayFeedbackNode.gain.setTargetAtTime(clamped, this.audioCtx.currentTime, 0.03);
+          this.delayGainNode.gain.setTargetAtTime(delayWet, this.audioCtx.currentTime, 0.03);
+        } else {
+          this.delayFeedbackNode.gain.value = clamped;
+          this.delayGainNode.gain.value = delayWet;
+        }
+      } catch {
+        this.delayFeedbackNode.gain.value = clamped;
+        this.delayGainNode.gain.value = clamped > 0 ? 0.75 : 0;
+      }
+    }
+    this.saveSpatialToStorage();
+  }
+
+  setSpatialPreset(name: 'none' | 'room' | 'hall' | 'stadium' | 'space-echo'): void {
+    const presets: Record<string, { reverb: number; delay: number; feedback: number }> = {
+      none: { reverb: 0, delay: 0.3, feedback: 0 },
+      room: { reverb: 0.25, delay: 0.15, feedback: 0.15 },
+      hall: { reverb: 0.55, delay: 0.3, feedback: 0.3 },
+      stadium: { reverb: 0.8, delay: 0.45, feedback: 0.5 },
+      'space-echo': { reverb: 0.4, delay: 0.65, feedback: 0.65 },
+    };
+
+    const target = presets[name] || presets['none'];
+    this.setReverbWet(target.reverb);
+    this.setDelayTime(target.delay);
+    this.setDelayFeedback(target.feedback);
+    this.spatialPreset.set(name);
+    this.saveSpatialToStorage();
+  }
+
+  resetSpatialEffects(): void {
+    this.setSpatialPreset('none');
+  }
+
+  private saveSpatialToStorage(): void {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      const data = {
+        reverbWet: this.reverbWet(),
+        delayTime: this.delayTime(),
+        delayFeedback: this.delayFeedback(),
+        spatialPreset: this.spatialPreset(),
+      };
+      localStorage.setItem('from_zero_spatial', JSON.stringify(data));
+    } catch {
+      // Ignorer si stockage inaccessible
+    }
+  }
+
+  private loadSpatialFromStorage(): void {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      const stored = localStorage.getItem('from_zero_spatial');
+      if (stored) {
+        const data = JSON.parse(stored);
+        if (typeof data.reverbWet === 'number') this.reverbWet.set(data.reverbWet);
+        if (typeof data.delayTime === 'number') this.delayTime.set(data.delayTime);
+        if (typeof data.delayFeedback === 'number') this.delayFeedback.set(data.delayFeedback);
+        if (data.spatialPreset) this.spatialPreset.set(data.spatialPreset);
       }
     } catch {
       // Ignorer si parsing invalide

@@ -1,0 +1,39 @@
+<div
+  class="waveform-wrapper"
+  #waveformWrapper
+  (mousemove)="onMouseMove($event)"
+  (mouseenter)="onMouseEnter($event)"
+  (mouseleave)="onMouseLeave()"
+  (mousedown)="onMouseDown($event)"
+  (touchstart)="onTouchStart($event)"
+  (touchmove)="onTouchMove($event)"
+  (touchend)="onTouchEnd()"
+  role="slider"
+  tabindex="0"
+  [attr.aria-valuemin]="0"
+  [attr.aria-valuemax]="100"
+  [attr.aria-valuenow]="player.progress()"
+  [attr.aria-label]="'Position de lecture ' + player.formattedCurrentTime() + ' sur ' + player.formattedDuration()"
+  (keydown)="onKeyDown($event)"
+>
+  <canvas #waveformCanvas class="waveform-canvas"></canvas>
+
+  <!-- Curseur de survol avec indicateur vertical et badge de temps précis -->
+  @if (isHovering() && hoverPercent() !== null) {
+    <div class="hover-indicator" [style.left.%]="hoverPercent()">
+      <div class="hover-line"></div>
+      <div class="hover-badge">{{ hoverTimeFormatted() }}</div>
+    </div>
+  }
+
+  <!-- Tête de lecture actuelle (Playhead) illuminée aux couleurs From Zero -->
+  <div class="playhead-marker" [style.left.%]="player.progress()">
+    <div class="playhead-line"></div>
+    <div class="playhead-glow"></div>
+  </div>
+
+  <!-- Effet shimmer discret lors du chargement/décodage -->
+  @if (player.isWaveformLoading()) {
+    <div class="waveform-shimmer" title="Décodage de la forme d'onde..."></div>
+  }
+</div>

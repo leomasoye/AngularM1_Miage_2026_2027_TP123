@@ -91,11 +91,16 @@ export class SearchResultsComponent implements OnInit {
     this.route.queryParams.subscribe(params => {
       const q = params['q'] || '';
       this.query.set(q);
-      if (q) {
-        this.performSearch(q);
-      } else {
-        this.results.set({ users: [], tracks: [] });
-      }
+      this.performSearch(q);
+    });
+  }
+
+  clearSearch() {
+    this.query.set('');
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { q: null },
+      queryParamsHandling: 'merge'
     });
   }
 

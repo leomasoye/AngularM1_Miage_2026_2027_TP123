@@ -56,67 +56,70 @@
   <div class="main-dsp-grid">
     <!-- 3 Band Sliders -->
     <div class="sliders-container">
-      <!-- Bass Band (100 Hz) -->
+      <!-- Bass Band (150 Hz) -->
       <div class="band-column">
-        <span class="band-value" [class.boost]="player.bass() > 0" [class.cut]="player.bass() < 0">
+        <span class="band-value" [class.boost]="player.bass() > 0" [class.mega-boost]="player.bass() >= 10" [class.cut]="player.bass() < 0">
           {{ player.bass() > 0 ? '+' : '' }}{{ player.bass() }} dB
         </span>
         <div class="slider-track">
+          <div class="zero-db-line" title="0 dB (Neutre)"></div>
           <input
             type="range"
             class="eq-slider"
-            min="-12"
-            max="12"
+            min="-24"
+            max="24"
             step="0.5"
             [value]="player.bass()"
             (input)="onBassChange($event)"
-            title="Basses (100 Hz)"
+            title="Basses (150 Hz) : -24 dB à +24 dB"
           />
         </div>
         <span class="band-name">Basses</span>
-        <span class="band-freq">100 Hz</span>
+        <span class="band-freq">150 Hz</span>
       </div>
 
       <!-- Mid Band (1 kHz) -->
       <div class="band-column">
-        <span class="band-value" [class.boost]="player.mid() > 0" [class.cut]="player.mid() < 0">
+        <span class="band-value" [class.boost]="player.mid() > 0" [class.mega-boost]="player.mid() >= 10" [class.cut]="player.mid() < 0">
           {{ player.mid() > 0 ? '+' : '' }}{{ player.mid() }} dB
         </span>
         <div class="slider-track">
+          <div class="zero-db-line" title="0 dB (Neutre)"></div>
           <input
             type="range"
             class="eq-slider"
-            min="-12"
-            max="12"
+            min="-24"
+            max="24"
             step="0.5"
             [value]="player.mid()"
             (input)="onMidChange($event)"
-            title="Médiums (1 kHz)"
+            title="Médiums (1 kHz) : -24 dB à +24 dB"
           />
         </div>
         <span class="band-name">Médiums</span>
         <span class="band-freq">1 kHz</span>
       </div>
 
-      <!-- Treble Band (8 kHz) -->
+      <!-- Treble Band (6 kHz) -->
       <div class="band-column">
-        <span class="band-value" [class.boost]="player.treble() > 0" [class.cut]="player.treble() < 0">
+        <span class="band-value" [class.boost]="player.treble() > 0" [class.mega-boost]="player.treble() >= 10" [class.cut]="player.treble() < 0">
           {{ player.treble() > 0 ? '+' : '' }}{{ player.treble() }} dB
         </span>
         <div class="slider-track">
+          <div class="zero-db-line" title="0 dB (Neutre)"></div>
           <input
             type="range"
             class="eq-slider"
-            min="-12"
-            max="12"
+            min="-24"
+            max="24"
             step="0.5"
             [value]="player.treble()"
             (input)="onTrebleChange($event)"
-            title="Aigus (8 kHz)"
+            title="Aigus (6 kHz) : -24 dB à +24 dB"
           />
         </div>
         <span class="band-name">Aigus</span>
-        <span class="band-freq">8 kHz</span>
+        <span class="band-freq">6 kHz</span>
       </div>
     </div>
 
@@ -152,10 +155,149 @@
     </div>
   </div>
 
+  <!-- Séparateur décoratif -->
+  <div class="section-divider"></div>
+
+  <!-- Effets Spatiaux : Reverb Convolver & Delay Écho (Étape 9) -->
+  <div class="spatial-section">
+    <div class="spatial-header">
+      <div class="spatial-title-wrapper">
+        <mat-icon class="spatial-icon">surround_sound</mat-icon>
+        <div>
+          <span class="spatial-title">Effets Spatiaux & Ambiance</span>
+          <span class="spatial-subtitle">Réverbération Concert Hall & Écho Synchronisé</span>
+        </div>
+      </div>
+      <div class="spatial-preset-chips">
+        <button
+          type="button"
+          class="spatial-chip"
+          [class.active]="player.spatialPreset() === 'none'"
+          (click)="selectSpatialPreset('none')"
+        >
+          Désactivé
+        </button>
+        <button
+          type="button"
+          class="spatial-chip"
+          [class.active]="player.spatialPreset() === 'room'"
+          (click)="selectSpatialPreset('room')"
+        >
+          Club Intime
+        </button>
+        <button
+          type="button"
+          class="spatial-chip"
+          [class.active]="player.spatialPreset() === 'hall'"
+          (click)="selectSpatialPreset('hall')"
+        >
+          Concert Hall
+        </button>
+        <button
+          type="button"
+          class="spatial-chip"
+          [class.active]="player.spatialPreset() === 'stadium'"
+          (click)="selectSpatialPreset('stadium')"
+        >
+          Stade Rock
+        </button>
+        <button
+          type="button"
+          class="spatial-chip"
+          [class.active]="player.spatialPreset() === 'space-echo'"
+          (click)="selectSpatialPreset('space-echo')"
+        >
+          Écho Spatial
+        </button>
+      </div>
+    </div>
+
+    <!-- Contrôles horizontaux modernes -->
+    <div class="spatial-controls-grid">
+      <!-- Réverbération (Concert Hall) -->
+      <div class="spatial-control-card">
+        <div class="control-label-row">
+          <div class="control-label-left">
+            <mat-icon class="control-icon">waves</mat-icon>
+            <span class="control-label">Réverbération (Hall)</span>
+          </div>
+          <span class="control-value-badge">{{ (player.reverbWet() * 100).toFixed(0) }}%</span>
+        </div>
+        <div class="horizontal-slider-wrapper">
+          <input
+            type="range"
+            class="spatial-slider"
+            min="0"
+            max="100"
+            step="1"
+            [value]="player.reverbWet() * 100"
+            (input)="onReverbChange($event)"
+            title="Dosage de la réverbération"
+          />
+          <div class="spatial-slider-fill" [style.width.%]="player.reverbWet() * 100"></div>
+        </div>
+      </div>
+
+      <!-- Temps d'écho (Delay) -->
+      <div class="spatial-control-card">
+        <div class="control-label-row">
+          <div class="control-label-left">
+            <mat-icon class="control-icon">timer</mat-icon>
+            <span class="control-label">Temps d'écho (Delay)</span>
+          </div>
+          <span class="control-value-badge">{{ (player.delayTime() * 1000).toFixed(0) }} ms</span>
+        </div>
+        <div class="horizontal-slider-wrapper">
+          <input
+            type="range"
+            class="spatial-slider"
+            min="50"
+            max="1000"
+            step="10"
+            [value]="player.delayTime() * 1000"
+            (input)="onDelayTimeChange($event)"
+            title="Temps de retard de l'écho (ms)"
+          />
+          <div
+            class="spatial-slider-fill"
+            [style.width.%]="((player.delayTime() * 1000 - 50) / 950) * 100"
+          ></div>
+        </div>
+      </div>
+
+      <!-- Répétition (Feedback) -->
+      <div class="spatial-control-card">
+        <div class="control-label-row">
+          <div class="control-label-left">
+            <mat-icon class="control-icon">repeat</mat-icon>
+            <span class="control-label">Répétition (Feedback)</span>
+          </div>
+          <span class="control-value-badge">{{ (player.delayFeedback() * 100).toFixed(0) }}%</span>
+        </div>
+        <div class="horizontal-slider-wrapper">
+          <input
+            type="range"
+            class="spatial-slider"
+            min="0"
+            max="80"
+            step="2"
+            [value]="player.delayFeedback() * 100"
+            (input)="onDelayFeedbackChange($event)"
+            title="Nombre de répétitions de l'écho"
+          />
+          <div
+            class="spatial-slider-fill"
+            [style.width.%]="(player.delayFeedback() / 0.8) * 100"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-footer">
-    <button mat-stroked-button (click)="reset()" class="btn-reset">
+    <button mat-stroked-button (click)="resetAll()" class="btn-reset">
       <mat-icon>restart_alt</mat-icon>
-      <span>Réinitialiser (Plat)</span>
+      <span>Réinitialiser tout</span>
     </button>
     <div class="spacer"></div>
     @if (dialogRef) {

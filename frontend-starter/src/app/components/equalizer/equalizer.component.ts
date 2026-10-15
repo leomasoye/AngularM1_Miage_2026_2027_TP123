@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { EQPreset, PlayerService } from '../../shared/services/player.service';
+import { EQPreset, PlayerService, SpatialPreset } from '../../shared/services/player.service';
 
 @Component({
   selector: 'app-equalizer',
@@ -53,8 +53,35 @@ export class EqualizerComponent implements OnInit, OnDestroy {
     this.player.setPreset(name);
   }
 
+  // --- Effets Spatiaux (Reverb & Delay - Étape 9) ---
+
+  onReverbChange(event: Event): void {
+    const val = Number((event.target as HTMLInputElement).value);
+    this.player.setReverbWet(val / 100);
+  }
+
+  onDelayTimeChange(event: Event): void {
+    const val = Number((event.target as HTMLInputElement).value);
+    this.player.setDelayTime(val / 1000);
+  }
+
+  onDelayFeedbackChange(event: Event): void {
+    const val = Number((event.target as HTMLInputElement).value);
+    this.player.setDelayFeedback(val / 100);
+  }
+
+  selectSpatialPreset(preset: SpatialPreset): void {
+    if (preset === 'custom') return;
+    this.player.setSpatialPreset(preset);
+  }
+
   reset(): void {
     this.player.resetEQ();
+  }
+
+  resetAll(): void {
+    this.player.resetEQ();
+    this.player.resetSpatialEffects();
   }
 
   close(): void {
@@ -65,9 +92,15 @@ export class EqualizerComponent implements OnInit, OnDestroy {
 
   private startAnimation(): void {
     if (typeof window === 'undefined' || typeof requestAnimationFrame === 'undefined') return;
+    if (this.animationFrameId !== null) return;
 
     this.ngZone.runOutsideAngular(() => {
       const loop = () => {
+        if (typeof document !== 'undefined' && document.hidden) {
+          this.animationFrameId = null;
+          return;
+        }
+
         const vu = this.player.getStereoVULevels();
         this.leftLevel = vu.left;
         this.rightLevel = vu.right;

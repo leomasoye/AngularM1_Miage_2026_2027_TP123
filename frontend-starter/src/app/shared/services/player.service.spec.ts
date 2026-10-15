@@ -114,9 +114,9 @@ describe('PlayerService', () => {
     expect(service.treble()).toBe(4);
 
     service.setPreset('bass-boost');
-    expect(service.bass()).toBe(7);
-    expect(service.mid()).toBe(0);
-    expect(service.treble()).toBe(-1);
+    expect(service.bass()).toBe(14);
+    expect(service.mid()).toBe(1);
+    expect(service.treble()).toBe(-2);
     expect(service.currentPreset()).toBe('bass-boost');
 
     service.resetEQ();
@@ -222,6 +222,89 @@ describe('PlayerService', () => {
     expect(service.queue().length).toBe(0);
     expect(service.history().length).toBe(1);
     expect(service.history()[0].id).toBe('t1');
+  });
+
+  it('devrait initialiser les signaux de waveform correctement', () => {
+    expect(service.waveformPeaks()).toEqual([]);
+    expect(service.isWaveformLoading()).toBe(false);
+  });
+
+  it('devrait générer 120 crêtes fallback régulières et bornées', () => {
+    const fallback = service.generateFallbackPeaks(120);
+    expect(fallback.length).toBe(120);
+    expect(fallback.every((p) => p >= 0.08 && p <= 1.0)).toBe(true);
+  });
+
+  it('devrait extraire et normaliser les crêtes à partir d un AudioBuffer mock', () => {
+    // Créer un mock simple d'AudioBuffer avec 1200 échantillons
+    const mockChannelData = new Float32Array(1200);
+    for (let i = 0; i < 1200; i++) {
+      mockChannelData[i] = Math.sin(i / 10) * 0.8;
+    }
+
+    const mockAudioBuffer = {
+      numberOfChannels: 1,
+      length: 1200,
+      sampleRate: 44100,
+      duration: 1200 / 44100,
+      getChannelData: () => mockChannelData,
+    } as unknown as AudioBuffer;
+
+    const peaks = service.extractPeaks(mockAudioBuffer, 60);
+    expect(peaks.length).toBe(60);
+    expect(peaks.every((p) => p >= 0.08 && p <= 1.0)).toBe(true);
+    // Au moins une valeur maximale proche de 1 (normalisée)
+    expect(Math.max(...peaks)).toBeCloseTo(1, 1);
+  });
+
+  it('devrait vider la waveform lors de l appel à stop()', () => {
+    service.waveformPeaks.set([0.5, 0.8, 0.2]);
+    service.isWaveformLoading.set(true);
+
+    service.stop();
+
+    expect(service.waveformPeaks()).toEqual([]);
+    expect(service.isWaveformLoading()).toBe(false);
+  });
+
+  it('devrait configurer et borner les paramètres d effets spatiaux (Reverb & Delay)', () => {
+    service.setReverbWet(0.65);
+    expect(service.reverbWet()).toBe(0.65);
+    service.setReverbWet(1.5);
+    expect(service.reverbWet()).toBe(1.0);
+    service.setReverbWet(-0.5);
+    expect(service.reverbWet()).toBe(0);
+
+    service.setDelayTime(0.45);
+    expect(service.delayTime()).toBe(0.45);
+    service.setDelayTime(2.0);
+    expect(service.delayTime()).toBe(1.0);
+    service.setDelayTime(0.01);
+    expect(service.delayTime()).toBe(0.05);
+
+    service.setDelayFeedback(0.5);
+    expect(service.delayFeedback()).toBe(0.5);
+    service.setDelayFeedback(0.95);
+    expect(service.delayFeedback()).toBe(0.8);
+    service.setDelayFeedback(-0.2);
+    expect(service.delayFeedback()).toBe(0);
+  });
+
+  it('devrait appliquer les presets spatiaux et réinitialiser avec resetSpatialEffects()', () => {
+    service.setSpatialPreset('hall');
+    expect(service.spatialPreset()).toBe('hall');
+    expect(service.reverbWet()).toBe(0.55);
+    expect(service.delayTime()).toBe(0.3);
+    expect(service.delayFeedback()).toBe(0.3);
+
+    service.setSpatialPreset('stadium');
+    expect(service.spatialPreset()).toBe('stadium');
+    expect(service.reverbWet()).toBe(0.8);
+
+    service.resetSpatialEffects();
+    expect(service.spatialPreset()).toBe('none');
+    expect(service.reverbWet()).toBe(0);
+    expect(service.delayFeedback()).toBe(0);
   });
 });
 

@@ -45,12 +45,14 @@ test("canAccessTrack permissions", async () => {
   assert.equal(await canAccessTrack(ownerId, publicTrack), true);
   assert.equal(await canAccessTrack(ownerId, privateTrack), true);
 
-  // 2. Public track accessible par n'importe qui
+  // 2. Public track accessible par n'importe qui (même sans token/userId)
   assert.equal(await canAccessTrack(strangerId, publicTrack), true);
+  assert.equal(await canAccessTrack(null, publicTrack), true);
 
-  // 3. Private track inaccessible si pas de Share en base
+  // 3. Private track inaccessible si pas de Share en base ou sans userId
   assert.equal(await canAccessTrack(friendId, privateTrack), false);
   assert.equal(await canAccessTrack(strangerId, privateTrack), false);
+  assert.equal(await canAccessTrack(null, privateTrack), false);
 });
 
 test("canAccessTrack with active share", async () => {

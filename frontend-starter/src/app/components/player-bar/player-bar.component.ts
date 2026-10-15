@@ -1,5 +1,6 @@
 import {
   Component,
+  effect,
   ElementRef,
   inject,
   NgZone,
@@ -17,6 +18,7 @@ import { PlayerService } from '../../shared/services/player.service';
 import { Track } from '../../shared/models/track.model';
 import { LikeButtonComponent } from '../like-button/like-button';
 import { EqualizerComponent } from '../equalizer/equalizer.component';
+import { WaveformComponent } from '../waveform/waveform.component';
 
 @Component({
   selector: 'app-player-bar',
@@ -28,6 +30,7 @@ import { EqualizerComponent } from '../equalizer/equalizer.component';
     MatProgressSpinnerModule,
     MatDialogModule,
     LikeButtonComponent,
+    WaveformComponent,
   ],
   templateUrl: './player-bar.component.html',
   styleUrl: './player-bar.component.css',
@@ -42,6 +45,18 @@ export class PlayerBarComponent implements OnInit, OnDestroy {
   readonly isQueueOpen = signal(false);
 
   private animationFrameId: number | null = null;
+  private visibilityHandler?: () => void;
+
+  constructor() {
+    effect(() => {
+      if (this.player.isPlaying()) {
+        this.startVisualizer();
+      } else {
+        this.stopVisualizer();
+        this.drawVisualizer();
+      }
+    });
+  }
 
   toggleQueue(): void {
     this.isQueueOpen.update((open) => !open);
@@ -57,11 +72,28 @@ export class PlayerBarComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.startVisualizer();
+    if (typeof document !== 'undefined') {
+      this.visibilityHandler = () => {
+        if (!document.hidden && this.player.isPlaying()) {
+          this.startVisualizer();
+        } else if (document.hidden) {
+          this.stopVisualizer();
+        }
+      };
+      document.addEventListener('visibilitychange', this.visibilityHandler);
+    }
+
+    this.drawVisualizer();
+    if (this.player.isPlaying()) {
+      this.startVisualizer();
+    }
   }
 
   ngOnDestroy(): void {
     this.stopVisualizer();
+    if (typeof document !== 'undefined' && this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+    }
   }
 
   onProgressInput(event: Event): void {
@@ -105,11 +137,22 @@ export class PlayerBarComponent implements OnInit, OnDestroy {
 
   private startVisualizer(): void {
     if (typeof window === 'undefined' || typeof requestAnimationFrame === 'undefined') return;
+    if (this.animationFrameId !== null) return;
 
     this.ngZone.runOutsideAngular(() => {
       const render = () => {
+        if (typeof document !== 'undefined' && document.hidden) {
+          this.animationFrameId = null;
+          return;
+        }
+
         this.drawVisualizer();
-        this.animationFrameId = requestAnimationFrame(render);
+
+        if (this.player.isPlaying()) {
+          this.animationFrameId = requestAnimationFrame(render);
+        } else {
+          this.animationFrameId = null;
+        }
       };
       this.animationFrameId = requestAnimationFrame(render);
     });

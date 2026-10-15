@@ -29,3 +29,24 @@ export function auth(req, res, next) {
     return res.status(401).json({ message: "Jeton invalide ou expiré" });
   }
 }
+
+export function optionalAuth(req, res, next) {
+  let raw = req.headers.authorization;
+  if (!raw && req.query?.token) {
+    raw = `Bearer ${req.query.token}`;
+  }
+
+  if (!raw?.startsWith("Bearer ")) {
+    req.auth = null;
+    return next();
+  }
+
+  try {
+    req.auth = jwt.verify(raw.slice(7), SECRET);
+    next();
+  } catch {
+    req.auth = null;
+    next();
+  }
+}
+
