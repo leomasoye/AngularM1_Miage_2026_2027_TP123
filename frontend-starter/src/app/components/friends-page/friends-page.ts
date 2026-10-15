@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,7 +11,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   standalone: true,
   imports: [CommonModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
   templateUrl: './friends-page.html',
-  styleUrl: './friends-page.css'
+  styleUrl: './friends-page.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FriendsPageComponent implements OnInit {
   private readonly friendsService = inject(FriendsService);

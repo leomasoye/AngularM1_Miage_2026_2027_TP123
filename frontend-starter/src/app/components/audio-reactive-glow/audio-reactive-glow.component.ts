@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   effect,
@@ -29,6 +30,7 @@ interface DustParticle {
   imports: [CommonModule],
   templateUrl: './audio-reactive-glow.component.html',
   styleUrl: './audio-reactive-glow.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AudioReactiveGlowComponent implements OnInit, OnDestroy {
   readonly player = inject(PlayerService);

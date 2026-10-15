@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   computed,
   ElementRef,
@@ -41,6 +42,7 @@ import { PlayerService } from '../../shared/services/player.service';
   ],
   templateUrl: './tracks-page.html',
   styleUrl: './tracks-page.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TracksPageComponent implements OnDestroy {
   private readonly service = inject(TrackService);

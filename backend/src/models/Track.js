@@ -43,7 +43,6 @@ schema.index({ title: 1, visibility: 1 });
  * L'identifiant MongoDB devient la propriété simple `id` attendue par Angular.
  */
 schema.methods.toPublic = function () {
-  console.debug(`[track-model] Préparation de la piste publique ${this.id}`);
   return {
     id: this.id,
     ownerId: String(this.ownerId),

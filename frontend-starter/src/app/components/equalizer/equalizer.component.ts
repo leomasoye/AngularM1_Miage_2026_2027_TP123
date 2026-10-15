@@ -1,4 +1,4 @@
-import { Component, ElementRef, inject, NgZone, OnDestroy, OnInit, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, inject, NgZone, OnDestroy, OnInit, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,6 +11,7 @@ import { EQPreset, PlayerService, SpatialPreset } from '../../shared/services/pl
   imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule],
   templateUrl: './equalizer.component.html',
   styleUrl: './equalizer.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EqualizerComponent implements OnInit, OnDestroy {
   readonly player = inject(PlayerService);
@@ -18,6 +19,10 @@ export class EqualizerComponent implements OnInit, OnDestroy {
   private readonly ngZone = inject(NgZone);
 
   readonly canvasRef = viewChild<ElementRef<HTMLCanvasElement>>('oscilloscopeCanvas');
+  readonly leftFillRef = viewChild<ElementRef<HTMLDivElement>>('leftFillBar');
+  readonly leftPeakRef = viewChild<ElementRef<HTMLDivElement>>('leftPeakBar');
+  readonly rightFillRef = viewChild<ElementRef<HTMLDivElement>>('rightFillBar');
+  readonly rightPeakRef = viewChild<ElementRef<HTMLDivElement>>('rightPeakBar');
 
   private animationFrameId: number | null = null;
   leftLevel = 0;
@@ -106,6 +111,17 @@ export class EqualizerComponent implements OnInit, OnDestroy {
         this.rightLevel = vu.right;
         this.leftPeak = vu.leftPeak;
         this.rightPeak = vu.rightPeak;
+
+        // Rafraîchissement direct du DOM pour 60 FPS constants sans surcharge de Change Detection
+        const lf = this.leftFillRef()?.nativeElement;
+        if (lf) lf.style.height = `${(vu.left * 100).toFixed(1)}%`;
+        const lp = this.leftPeakRef()?.nativeElement;
+        if (lp) lp.style.bottom = `${(vu.leftPeak * 100).toFixed(1)}%`;
+
+        const rf = this.rightFillRef()?.nativeElement;
+        if (rf) rf.style.height = `${(vu.right * 100).toFixed(1)}%`;
+        const rp = this.rightPeakRef()?.nativeElement;
+        if (rp) rp.style.bottom = `${(vu.rightPeak * 100).toFixed(1)}%`;
 
         this.drawOscilloscope();
 

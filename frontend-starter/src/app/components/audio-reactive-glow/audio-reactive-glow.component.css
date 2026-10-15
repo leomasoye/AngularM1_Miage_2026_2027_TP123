@@ -55,7 +55,6 @@
   pointer-events: none;
   will-change: transform, opacity;
   transform-origin: center center;
-  transition: transform 0.08s ease-out, opacity 0.1s ease-out;
 }
 
 /* ORBE 1 : Orchid - Réactive aux basses / kicks */

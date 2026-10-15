@@ -41,6 +41,8 @@ export class WaveformComponent implements OnInit, AfterViewInit, OnDestroy {
   private boundWindowMouseMove?: (e: MouseEvent) => void;
   private boundWindowMouseUp?: (e: MouseEvent) => void;
   private visibilityHandler?: () => void;
+  private cachedPlayedGradient: CanvasGradient | null = null;
+  private cachedGradientHeight = 0;
 
   constructor() {
     effect(() => {
@@ -183,6 +185,18 @@ export class WaveformComponent implements OnInit, AfterViewInit, OnDestroy {
     const barWidth = Math.max(1.5, (width - totalGaps) / totalBars);
     const centerY = height / 2;
 
+    // Cache du dégradé vertical From Zero pour éviter des milliers d'allocations par seconde
+    if (!this.cachedPlayedGradient || this.cachedGradientHeight !== height) {
+      this.cachedGradientHeight = height;
+      this.cachedPlayedGradient = ctx.createLinearGradient(0, 0, 0, height);
+      this.cachedPlayedGradient.addColorStop(0, '#d89af8');
+      this.cachedPlayedGradient.addColorStop(0.4, '#9b3fd4');
+      this.cachedPlayedGradient.addColorStop(1, '#1a7fe8');
+    }
+
+    const COLOR_UNPLAYED = 'rgba(155, 63, 212, 0.22)';
+    const COLOR_HOVERED = 'rgba(155, 63, 212, 0.55)';
+
     for (let i = 0; i < totalBars; i++) {
       const x = i * (barWidth + gap);
       const barProgress = (i / totalBars) * 100;
@@ -197,18 +211,9 @@ export class WaveformComponent implements OnInit, AfterViewInit, OnDestroy {
         hoverPct !== null && Math.abs(barProgress - hoverPct) < 100 / totalBars;
 
       if (isPlayed) {
-        // Dégradé From Zero éclatant : Orchid vers Bleu Électrique (sans shadowBlur lourd)
-        const grad = ctx.createLinearGradient(0, y, 0, y + barHeight);
-        grad.addColorStop(0, '#d89af8');
-        grad.addColorStop(0.4, '#9b3fd4');
-        grad.addColorStop(1, '#1a7fe8');
-        ctx.fillStyle = grad;
+        ctx.fillStyle = this.cachedPlayedGradient;
       } else {
-        if (isHovered) {
-          ctx.fillStyle = 'rgba(155, 63, 212, 0.55)';
-        } else {
-          ctx.fillStyle = 'rgba(155, 63, 212, 0.22)';
-        }
+        ctx.fillStyle = isHovered ? COLOR_HOVERED : COLOR_UNPLAYED;
       }
 
       // Dessin de la barre avec extrémités arrondies

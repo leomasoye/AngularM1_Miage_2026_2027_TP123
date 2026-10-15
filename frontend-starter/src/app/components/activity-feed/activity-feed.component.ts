@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, inject, OnInit, signal } from "@angular/core";
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, signal } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { MatButtonModule } from "@angular/material/button";
@@ -30,6 +30,7 @@ import { filter } from "rxjs/operators";
   ],
   templateUrl: "./activity-feed.component.html",
   styleUrl: "./activity-feed.component.css",
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ActivityFeedComponent implements OnInit {
   private readonly activityService = inject(ActivityService);

@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -29,7 +29,8 @@ import { AddToPlaylistModalComponent } from '../add-to-playlist-modal/add-to-pla
     AvatarComponent,
   ],
   templateUrl: './search-results.html',
-  styleUrl: './search-results.css'
+  styleUrl: './search-results.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SearchResultsComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
@@ -99,11 +100,13 @@ export class SearchResultsComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.route.queryParams.subscribe(params => {
-      const q = params['q'] || '';
-      this.query.set(q);
-      this.performSearch(q);
-    });
+    this.route.queryParams
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params) => {
+        const q = params['q'] || '';
+        this.query.set(q);
+        this.performSearch(q);
+      });
   }
 
   clearSearch() {

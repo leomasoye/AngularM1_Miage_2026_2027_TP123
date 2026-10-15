@@ -116,11 +116,21 @@ router.get("/", optionalAuth, searchLimiter, async (req, res, next) => {
     const smartRegex = makeSmartRegex(q);
     const results = { users: [], tracks: [] };
 
-    // 1. Recherche intelligente des utilisateurs correspondants (ex: "bruno" -> "Bruno Mars")
-    const matchedUsers = await User.find({ name: smartRegex })
-      .limit(25)
-      .select("-email -passwordHash")
-      .lean();
+    // Lancer la recherche des profils et des pistes par titre en parallèle via Promise.all
+    const [matchedUsers, directTracks] = await Promise.all([
+      User.find({ name: smartRegex })
+        .limit(25)
+        .select("-email -passwordHash")
+        .lean(),
+      type === "all" || type === "tracks"
+        ? Track.find({ visibility: "public", title: smartRegex })
+            .sort({ createdAt: -1 })
+            .limit(30)
+            .select("-storedName")
+            .populate("ownerId", "name avatarUrl")
+            .lean()
+        : Promise.resolve([]),
+    ]);
 
     if (type === "all" || type === "users") {
       results.users = matchedUsers.map((u) => ({
@@ -130,27 +140,28 @@ router.get("/", optionalAuth, searchLimiter, async (req, res, next) => {
       }));
     }
 
-    // 2. Recherche intelligente des pistes :
-    //    - correspond au titre OU
-    //    - appartient à l'un des artistes/utilisateurs trouvés (ex: titre de Bruno Mars même si le titre ne contient pas "bruno")
     if (type === "all" || type === "tracks") {
       const matchedUserIds = matchedUsers.map((u) => u._id);
-      const trackFilter = {
-        visibility: "public",
-        $or: [
-          { title: smartRegex },
-          ...(matchedUserIds.length > 0 ? [{ ownerId: { $in: matchedUserIds } }] : []),
-        ],
-      };
+      const directTrackIdSet = new Set(directTracks.map((t) => String(t._id)));
 
-      const matchedTracks = await Track.find(trackFilter)
-        .sort({ createdAt: -1 })
-        .limit(30)
-        .select("-storedName")
-        .populate("ownerId", "name avatarUrl")
-        .lean();
+      // Compléter avec les pistes créées par les artistes trouvés si la limite de 30 n'est pas atteinte
+      let artistTracks = [];
+      if (matchedUserIds.length > 0 && directTracks.length < 30) {
+        artistTracks = await Track.find({
+          visibility: "public",
+          ownerId: { $in: matchedUserIds },
+          _id: { $nin: Array.from(directTrackIdSet) },
+        })
+          .sort({ createdAt: -1 })
+          .limit(30 - directTracks.length)
+          .select("-storedName")
+          .populate("ownerId", "name avatarUrl")
+          .lean();
+      }
 
-      results.tracks = matchedTracks.map((t) => ({
+      const allMatchedTracks = [...directTracks, ...artistTracks];
+
+      results.tracks = allMatchedTracks.map((t) => ({
         id: String(t._id),
         title: t.title,
         ownerId: String(t.ownerId?._id || t.ownerId),

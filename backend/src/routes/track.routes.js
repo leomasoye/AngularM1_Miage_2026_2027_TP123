@@ -141,7 +141,7 @@ router.get("/:id/audio", optionalAuth, loadTrack, async (req, res, next) => {
     res.setHeader("Access-Control-Allow-Headers", "Range, Authorization");
     res.setHeader("Access-Control-Expose-Headers", "Content-Length, Content-Range, Accept-Ranges");
     res.setHeader("Accept-Ranges", "bytes");
-    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Cache-Control", "private, max-age=86400, must-revalidate");
 
     const audioPath = path.join(UPLOADS, req.track.storedName);
     res.type(req.track.mimeType);

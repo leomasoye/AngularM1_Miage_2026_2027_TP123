@@ -78,6 +78,7 @@ export class PlayerService implements OnDestroy {
   readonly waveformPeaks = signal<number[]>([]);
   readonly isWaveformLoading = signal<boolean>(false);
   private waveformCache = new Map<string, number[]>();
+  private impulseCache = new Map<string, AudioBuffer>();
   private currentDecodeAbortController?: AbortController;
 
   // Signal dérivé pour formater le temps actuel et la durée
@@ -839,8 +840,13 @@ export class PlayerService implements OnDestroy {
 
   createImpulseResponse(duration = 2.5, decay = 2.0): AudioBuffer | undefined {
     if (!this.audioCtx || typeof this.audioCtx.createBuffer !== 'function') return undefined;
+    const rate = this.audioCtx.sampleRate || 44100;
+    const cacheKey = `${duration}_${decay}_${rate}`;
+    if (this.impulseCache.has(cacheKey)) {
+      return this.impulseCache.get(cacheKey)!;
+    }
+
     try {
-      const rate = this.audioCtx.sampleRate || 44100;
       const length = Math.max(1, Math.floor(rate * duration));
       const impulse = this.audioCtx.createBuffer(2, length, rate);
       const left = impulse.getChannelData(0);
@@ -852,6 +858,7 @@ export class PlayerService implements OnDestroy {
         left[i] = (Math.random() * 2 - 1) * envelope;
         right[i] = (Math.random() * 2 - 1) * envelope;
       }
+      this.impulseCache.set(cacheKey, impulse);
       return impulse;
     } catch (e) {
       console.warn('[PlayerService] Erreur création de réponse impulsionnelle:', e);
@@ -933,15 +940,25 @@ export class PlayerService implements OnDestroy {
         this.convolverNode = this.audioCtx.createConvolver();
         this.convolverNode.buffer = impulse;
         this.connectNodes();
-      } else {
+      } else if (this.convolverNode.buffer !== impulse) {
         try {
           this.convolverNode.buffer = impulse;
         } catch {
-          // Re-créer le ConvolverNode si le buffer ne peut être réassigné à chaud
+          // Si le buffer ne peut être réassigné à chaud, on remplace la branche reverb
+          // sans couper la source audio principale pour éviter les craquements
+          try {
+            this.convolverNode.disconnect();
+          } catch {}
           const newConvolver = this.audioCtx.createConvolver();
           newConvolver.buffer = impulse;
           this.convolverNode = newConvolver;
-          this.connectNodes();
+          const eqOutput = this.highFilter || this.sourceNode;
+          if (eqOutput && this.reverbGainNode) {
+            eqOutput.connect(this.convolverNode);
+            this.convolverNode.connect(this.reverbGainNode);
+          } else {
+            this.connectNodes();
+          }
         }
       }
     } catch (e) {

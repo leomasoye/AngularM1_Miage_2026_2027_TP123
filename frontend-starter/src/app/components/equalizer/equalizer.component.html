@@ -137,8 +137,8 @@
           <div class="vu-channel">
             <span class="ch-label">L</span>
             <div class="meter-bar-track">
-              <div class="meter-bar-fill left-fill" [style.height.%]="leftLevel * 100"></div>
-              <div class="meter-peak left-peak" [style.bottom.%]="leftPeak * 100"></div>
+              <div #leftFillBar class="meter-bar-fill left-fill" [style.height.%]="leftLevel * 100"></div>
+              <div #leftPeakBar class="meter-peak left-peak" [style.bottom.%]="leftPeak * 100"></div>
             </div>
           </div>
 
@@ -146,8 +146,8 @@
           <div class="vu-channel">
             <span class="ch-label">R</span>
             <div class="meter-bar-track">
-              <div class="meter-bar-fill right-fill" [style.height.%]="rightLevel * 100"></div>
-              <div class="meter-peak right-peak" [style.bottom.%]="rightPeak * 100"></div>
+              <div #rightFillBar class="meter-bar-fill right-fill" [style.height.%]="rightLevel * 100"></div>
+              <div #rightPeakBar class="meter-peak right-peak" [style.bottom.%]="rightPeak * 100"></div>
             </div>
           </div>
         </div>

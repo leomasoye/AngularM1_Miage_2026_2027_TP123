@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -27,6 +27,7 @@ import { Track } from '../../shared/models/track.model';
   ],
   templateUrl: './playlists-page.component.html',
   styleUrl: './playlists-page.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PlaylistsPageComponent implements OnInit {
   private readonly playlistService = inject(PlaylistService);

@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   effect,
   ElementRef,
@@ -35,6 +36,7 @@ import { WaveformComponent } from '../waveform/waveform.component';
   ],
   templateUrl: './player-bar.component.html',
   styleUrl: './player-bar.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PlayerBarComponent implements OnInit, OnDestroy {
   readonly player = inject(PlayerService);
@@ -48,6 +50,10 @@ export class PlayerBarComponent implements OnInit, OnDestroy {
 
   private animationFrameId: number | null = null;
   private visibilityHandler?: () => void;
+  private cachedFftGrad?: CanvasGradient;
+  private cachedLeftGrad?: CanvasGradient;
+  private cachedRightGrad?: CanvasGradient;
+  private cachedGradHeight = 0;
 
   constructor() {
     effect(() => {
@@ -184,6 +190,25 @@ export class PlayerBarComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Mise en cache des 3 dégradés (FFT, VU-G, VU-D) dès que la hauteur change
+    if (!this.cachedFftGrad || this.cachedGradHeight !== height) {
+      this.cachedGradHeight = height;
+
+      this.cachedFftGrad = ctx.createLinearGradient(0, height, 0, 0);
+      this.cachedFftGrad.addColorStop(0, '#1a7fe8');
+      this.cachedFftGrad.addColorStop(1, '#9b3fd4');
+
+      this.cachedLeftGrad = ctx.createLinearGradient(0, height, 0, 0);
+      this.cachedLeftGrad.addColorStop(0, '#00e676');
+      this.cachedLeftGrad.addColorStop(0.7, '#9b3fd4');
+      this.cachedLeftGrad.addColorStop(1, '#ff1744');
+
+      this.cachedRightGrad = ctx.createLinearGradient(0, height, 0, 0);
+      this.cachedRightGrad.addColorStop(0, '#00e676');
+      this.cachedRightGrad.addColorStop(0.7, '#1a7fe8');
+      this.cachedRightGrad.addColorStop(1, '#ff1744');
+    }
+
     // 1. Barres de fréquence FFT (gauche du canvas : 0 à 96px)
     const freqData = this.player.getFrequencyData();
     const fftWidth = 96;
@@ -191,18 +216,13 @@ export class PlayerBarComponent implements OnInit, OnDestroy {
       const barsCount = 14;
       const barWidth = Math.floor(fftWidth / barsCount) - 2;
       const step = Math.floor(freqData.length / barsCount) || 1;
+      ctx.fillStyle = this.cachedFftGrad!;
 
       for (let i = 0; i < barsCount; i++) {
         const val = freqData[i * step] || 0;
         const barHeight = Math.max(2, (val / 255) * height);
         const x = i * (barWidth + 2);
         const y = height - barHeight;
-
-        const grad = ctx.createLinearGradient(0, height, 0, 0);
-        grad.addColorStop(0, '#1a7fe8');
-        grad.addColorStop(1, '#9b3fd4');
-
-        ctx.fillStyle = grad;
         ctx.fillRect(x, y, barWidth, barHeight);
       }
     }
@@ -218,11 +238,7 @@ export class PlayerBarComponent implements OnInit, OnDestroy {
     // Track L (x = 112)
     const leftHeight = Math.min(height, Math.max(2, vu.left * height));
     const leftY = height - leftHeight;
-    const leftGrad = ctx.createLinearGradient(0, height, 0, 0);
-    leftGrad.addColorStop(0, '#00e676');
-    leftGrad.addColorStop(0.7, '#9b3fd4');
-    leftGrad.addColorStop(1, '#ff1744');
-    ctx.fillStyle = leftGrad;
+    ctx.fillStyle = this.cachedLeftGrad!;
     ctx.fillRect(112, leftY, vuWidth, leftHeight);
 
     // Peak L
@@ -233,11 +249,7 @@ export class PlayerBarComponent implements OnInit, OnDestroy {
     // Track R (x = 125)
     const rightHeight = Math.min(height, Math.max(2, vu.right * height));
     const rightY = height - rightHeight;
-    const rightGrad = ctx.createLinearGradient(0, height, 0, 0);
-    rightGrad.addColorStop(0, '#00e676');
-    rightGrad.addColorStop(0.7, '#1a7fe8');
-    rightGrad.addColorStop(1, '#ff1744');
-    ctx.fillStyle = rightGrad;
+    ctx.fillStyle = this.cachedRightGrad!;
     ctx.fillRect(125, rightY, vuWidth, rightHeight);
 
     // Peak R
