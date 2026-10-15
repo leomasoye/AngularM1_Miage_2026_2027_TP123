@@ -9,7 +9,16 @@ import { authInterceptor } from './app/shared/interceptors/auth.interceptor';
 bootstrapApplication(AppComponent, {
   providers: [
     provideZonelessChangeDetection(),
-    provideRouter(routes, withViewTransitions()),
+    provideRouter(
+      routes,
+      withViewTransitions({
+        skipInitialTransition: true,
+        onViewTransitionCreated: ({ transition }) => {
+          transition.ready?.catch(() => {});
+          transition.finished?.catch(() => {});
+        },
+      })
+    ),
     provideHttpClient(withInterceptors([authInterceptor])),
   ],
 }).catch(console.error);

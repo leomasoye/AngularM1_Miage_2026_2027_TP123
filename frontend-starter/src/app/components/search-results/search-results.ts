@@ -10,9 +10,11 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { LikeButtonComponent } from '../like-button/like-button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { SearchService, SearchResults } from '../../shared/services/search.service';
 import { PlayerService } from '../../shared/services/player.service';
 import { AvatarComponent } from '../../shared/components/avatar/avatar.component';
+import { AddToPlaylistModalComponent } from '../add-to-playlist-modal/add-to-playlist-modal.component';
 
 @Component({
   selector: 'app-search-results',
@@ -22,6 +24,7 @@ import { AvatarComponent } from '../../shared/components/avatar/avatar.component
     MatProgressSpinnerModule,
     MatIconModule,
     MatButtonModule,
+    MatDialogModule,
     LikeButtonComponent,
     AvatarComponent,
   ],
@@ -34,6 +37,7 @@ export class SearchResultsComponent implements OnInit {
   private readonly searchService = inject(SearchService);
   private readonly friendsService = inject(FriendsService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
   readonly player = inject(PlayerService);
 
@@ -72,6 +76,13 @@ export class SearchResultsComponent implements OnInit {
   addToQueue(track: any): void {
     this.player.addToQueue(track);
     this.snackBar.open(`"${track.title}" ajouté à la file d'attente.`, 'Fermer', { duration: 3000 });
+  }
+
+  openAddToPlaylist(track: any): void {
+    this.dialog.open(AddToPlaylistModalComponent, {
+      data: { track },
+      width: '460px',
+    });
   }
 
   addFriend(userId: string) {

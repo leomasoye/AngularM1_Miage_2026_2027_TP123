@@ -1,0 +1,145 @@
+<div class="playlist-modal-container">
+  <div class="modal-header">
+    <div class="header-titles">
+      <h2 class="modal-title">
+        <mat-icon class="title-icon">playlist_add</mat-icon>
+        Ajouter à une playlist
+      </h2>
+      <p class="track-caption">
+        Morceau : <strong>{{ data.track.title }}</strong>
+      </p>
+    </div>
+    <button mat-icon-button (click)="close()" class="close-btn" aria-label="Fermer">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="modal-body">
+    <!-- Barre d'action création rapide -->
+    <div class="create-trigger">
+      <button
+        type="button"
+        class="btn-toggle-create"
+        (click)="showCreateForm.set(!showCreateForm())"
+      >
+        <mat-icon>{{ showCreateForm() ? 'expand_less' : 'add' }}</mat-icon>
+        <span>{{ showCreateForm() ? 'Annuler' : 'Créer une nouvelle playlist' }}</span>
+      </button>
+    </div>
+
+    <!-- Formulaire de création rapide -->
+    @if (showCreateForm()) {
+      <div class="create-form-box">
+        <div class="form-row">
+          <input
+            type="text"
+            class="input-playlist-name"
+            placeholder="Nom de la playlist..."
+            [(ngModel)]="newPlaylistName"
+            (keyup.enter)="createAndAddPlaylist()"
+            maxlength="60"
+            autofocus
+          />
+        </div>
+
+        <div class="form-actions-row">
+          <div class="visibility-selector">
+            <button
+              type="button"
+              class="vis-btn"
+              [class.active]="newPlaylistVisibility === 'public'"
+              (click)="newPlaylistVisibility = 'public'"
+            >
+              <mat-icon>public</mat-icon> Publique
+            </button>
+            <button
+              type="button"
+              class="vis-btn"
+              [class.active]="newPlaylistVisibility === 'private'"
+              (click)="newPlaylistVisibility = 'private'"
+            >
+              <mat-icon>lock</mat-icon> Privée
+            </button>
+          </div>
+
+          <button
+            type="button"
+            class="btn-submit-create"
+            (click)="createAndAddPlaylist()"
+            [disabled]="creating() || !newPlaylistName.trim()"
+          >
+            @if (creating()) {
+              <mat-spinner diameter="18" color="accent"></mat-spinner>
+            } @else {
+              <mat-icon>check</mat-icon>
+              <span>Créer & Ajouter</span>
+            }
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Liste des playlists existantes -->
+    @if (loading()) {
+      <div class="modal-spinner">
+        <mat-spinner diameter="36"></mat-spinner>
+        <p>Chargement de vos playlists...</p>
+      </div>
+    } @else {
+      <div class="playlists-list">
+        @for (playlist of playlists(); track playlist.id) {
+          <div
+            class="playlist-item"
+            [class.in-playlist]="isTrackInPlaylist(playlist)"
+            (click)="toggleTrackInPlaylist(playlist)"
+          >
+            <div class="playlist-icon-wrap">
+              <mat-icon class="folder-icon">queue_music</mat-icon>
+            </div>
+
+            <div class="playlist-info">
+              <div class="playlist-name-row">
+                <span class="playlist-name">{{ playlist.name }}</span>
+                <span
+                  class="vis-pill"
+                  [class.private]="playlist.visibility === 'private'"
+                  [title]="playlist.visibility === 'private' ? 'Playlist privée' : 'Playlist publique'"
+                >
+                  <mat-icon class="pill-icon">{{ playlist.visibility === 'private' ? 'lock' : 'public' }}</mat-icon>
+                  {{ playlist.visibility === 'private' ? 'Privée' : 'Publique' }}
+                </span>
+              </div>
+              <span class="playlist-sub">
+                {{ playlist.tracksCount || 0 }} morceau{{ (playlist.tracksCount || 0) > 1 ? 'x' : '' }}
+              </span>
+            </div>
+
+            <div class="playlist-check">
+              @if (savingPlaylistId() === playlist.id) {
+                <mat-spinner diameter="20"></mat-spinner>
+              } @else if (isTrackInPlaylist(playlist)) {
+                <div class="check-badge checked" title="Présente dans cette playlist (cliquer pour retirer)">
+                  <mat-icon>check_circle</mat-icon>
+                </div>
+              } @else {
+                <div class="check-badge unchecked" title="Ajouter à cette playlist">
+                  <mat-icon>add_circle_outline</mat-icon>
+                </div>
+              }
+            </div>
+          </div>
+        } @empty {
+          <div class="empty-playlists">
+            <mat-icon class="empty-icon">library_music</mat-icon>
+            <p>Vous n'avez pas encore de playlist.</p>
+            <p class="empty-sub">Créez votre première playlist ci-dessus pour y ajouter ce morceau !</p>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="modal-footer">
+    <button mat-button class="btn-done" (click)="close()">Terminé</button>
+  </div>
+</div>

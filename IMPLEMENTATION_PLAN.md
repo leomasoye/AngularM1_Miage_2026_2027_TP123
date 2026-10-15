@@ -247,20 +247,32 @@ Transformer le prototype de gestion de pistes en application musicale sociale (t
 
 ---
 
-## Étape 10 : Playlists Personnalisées (Création & Gestion Sociale) 📋 [À VENIR]
+## Étape 10 : Playlists Personnalisées (Création & Gestion Sociale) ✅ [TERMINÉE]
 **Goal:** Organiser des sélections musicales et partager des playlists entre amis.
 
 #### [NEW] Backend `models/Playlist.js` & `routes/playlist.routes.js`
-- Modèle `Playlist` : `name`, `description`, `ownerId`, `tracks: [ObjectId]`, `visibility: 'public' | 'private'`.
+- Modèle `Playlist` : `name`, `description`, `ownerId`, `tracks: [ObjectId]`, `visibility: 'public' | 'private'`, `sharedWith: [ObjectId]`.
 - Routes CRUD complètes : `GET /api/playlists`, `POST /api/playlists`, `GET /api/playlists/:id`, `PATCH /api/playlists/:id`, `DELETE /api/playlists/:id`, `POST /api/playlists/:id/tracks/:trackId`, `DELETE /api/playlists/:id/tracks/:trackId`.
-- Contrôle d'accès strict : une playlist privée n'est accessible qu'à son créateur ou aux amis avec qui elle est partagée.
+- Contrôle d'accès strict `canAccessPlaylist` : une playlist privée n'est accessible qu'à son créateur, aux utilisateurs dans `sharedWith`, ou aux amis acceptés.
+- Cascade : la suppression d'une piste retire automatiquement cette piste de toutes les playlists (`Playlist.updateMany`).
 
-#### [NEW] Frontend `PlaylistsPageComponent` & `AddToPlaylistModalComponent`
-- Page de consultation et de gestion des playlists avec bouton "Nouvelle playlist".
-- Bouton "Ajouter à une playlist" sur les cartes de pistes.
-- Possibilité de charger toute une playlist en un clic dans la file d'attente (`addMultipleToQueue`).
+#### [NEW] Frontend `PlaylistsPageComponent`, `AddToPlaylistModalComponent` & `PlaylistService`
+- `PlaylistService` : service réactif avec signals (`playlists`, `loading`, `error`), méthodes CRUD complètes et gestion des ajouts/retraits de pistes.
+- `PlaylistsPageComponent` (route `/playlists`) :
+  - Filtrage par onglets ("Toutes", "Mes playlists", "Découvrir (Publiques)").
+  - Cartes From Zero glassmorphic avec pochette vinyle dynamique, badge de visibilité et compteurs de pistes.
+  - Lecture instantanée en 1 clic de toute la playlist (`playAll` via `player.playPlaylist`).
+  - Ajout de toute la playlist dans la file d'attente (`addAllToQueue` via `player.addMultipleToQueue`).
+  - Vue développée détaillée avec liste ordonnée des pistes, boutons d'écoute, like et retrait rapide.
+  - Modals From Zero d'ajout, édition et suppression de playlists.
+- `AddToPlaylistModalComponent` : dialogue interactif accessible depuis chaque carte de piste (`TracksPageComponent`, `SearchResultsComponent`, `ActivityFeedComponent`) permettant d'ajouter/retirer la piste d'une playlist existante en un clic ou de créer directement une nouvelle playlist avec la piste.
+- Sidebar de navigation : ajout de l'onglet `Playlists` avec icône `queue_music`.
 
-**DoD attendue:** Création, édition, ajout de pistes et lecture d'une playlist complète opérationnelles côté backend et frontend.
+**DoD validée :**
+- Création, édition, suppression, ajout et retrait de pistes opérationnels côté backend et frontend.
+- Lecture complète d'une playlist et ajout groupé à la file d'attente testés et fonctionnels.
+- 100% des tests unitaires au vert : 60/60 tests frontend passés (17 suites de tests) et 13/13 tests backend.
+- Build de production frontend Angular sans erreur avec lazy-loading propre (`ng build` code 0).
 
 ---
 

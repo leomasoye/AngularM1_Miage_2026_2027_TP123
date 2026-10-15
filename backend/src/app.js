@@ -6,6 +6,7 @@ import trackRoutes from "./routes/track.routes.js";
 import searchRoutes from "./routes/search.routes.js";
 import friendsRoutes from "./routes/friends.routes.js";
 import activityRoutes from "./routes/activity.routes.js";
+import playlistRoutes from "./routes/playlist.routes.js";
 import multer from "multer";
 
 export function createApp() {
@@ -33,6 +34,7 @@ export function createApp() {
   app.use("/api/friends", friendsRoutes);
   app.use("/api/activity", activityRoutes);
   app.use("/api/friends/activity", activityRoutes);
+  app.use("/api/playlists", playlistRoutes);
 
   app.use((error, _req, res, next) => {
     console.error("[error] Erreur reçue par le gestionnaire central", error);

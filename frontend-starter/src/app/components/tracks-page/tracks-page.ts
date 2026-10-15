@@ -22,6 +22,7 @@ import { TrackService } from '../../shared/services/track.service';
 import { TrackUploadComponent } from './track-upload/track-upload.component';
 import { LikeButtonComponent } from '../like-button/like-button';
 import { ShareModalComponent } from '../share-modal/share-modal.component';
+import { AddToPlaylistModalComponent } from '../add-to-playlist-modal/add-to-playlist-modal.component';
 import { PlayerService } from '../../shared/services/player.service';
 
 @Component({
@@ -322,6 +323,13 @@ export class TracksPageComponent implements OnDestroy {
     this.dialog.open(ShareModalComponent, {
       data: { track },
       width: '480px',
+    });
+  }
+
+  openAddToPlaylist(track: Track): void {
+    this.dialog.open(AddToPlaylistModalComponent, {
+      data: { track },
+      width: '460px',
     });
   }
 }

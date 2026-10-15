@@ -5,12 +5,14 @@ import { MatButtonModule } from "@angular/material/button";
 import { MatIconModule } from "@angular/material/icon";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { MatSnackBar } from "@angular/material/snack-bar";
+import { MatDialog, MatDialogModule } from "@angular/material/dialog";
 import { ActivityService } from "../../shared/services/activity.service";
 import { TrackService } from "../../shared/services/track.service";
 import { PlayerService } from "../../shared/services/player.service";
 import { ActivityTrack } from "../../shared/models/activity.model";
 import { LikeButtonComponent } from "../like-button/like-button";
 import { AvatarComponent } from "../../shared/components/avatar/avatar.component";
+import { AddToPlaylistModalComponent } from "../add-to-playlist-modal/add-to-playlist-modal.component";
 import { fromEvent, timer } from "rxjs";
 import { filter } from "rxjs/operators";
 
@@ -22,6 +24,7 @@ import { filter } from "rxjs/operators";
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    MatDialogModule,
     LikeButtonComponent,
     AvatarComponent,
   ],
@@ -33,6 +36,7 @@ export class ActivityFeedComponent implements OnInit {
   private readonly trackService = inject(TrackService);
   readonly player = inject(PlayerService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly loading = signal(false);
@@ -162,6 +166,13 @@ export class ActivityFeedComponent implements OnInit {
     this.snackBar.open(`"${track.title}" ajouté à la file d'attente.`, 'Fermer', {
       duration: 3000,
       panelClass: ['snackbar-success'],
+    });
+  }
+
+  openAddToPlaylist(track: ActivityTrack): void {
+    this.dialog.open(AddToPlaylistModalComponent, {
+      data: { track: track as any },
+      width: '460px',
     });
   }
 

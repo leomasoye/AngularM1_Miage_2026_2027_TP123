@@ -567,6 +567,14 @@ export class PlayerService implements OnDestroy {
     this.queue.update((q) => [...q, ...tracks]);
   }
 
+  async playPlaylist(tracks: Track[]): Promise<void> {
+    if (!tracks || tracks.length === 0) return;
+    const [first, ...rest] = tracks;
+    this.queue.set(rest);
+    this.history.set([]);
+    await this.playTrack(first);
+  }
+
   removeFromQueue(index: number): void {
     this.queue.update((q) => q.filter((_, i) => i !== index));
   }

@@ -3,8 +3,8 @@
     "version": "3.0.0",
     "type": "module",
     "scripts": {
-        "start": "node --env-file=.env src/server.js",
-        "start:local": "node src/server.js",
+        "start": "node --watch --env-file=.env src/server.js",
+        "start:local": "node --watch src/server.js",
         "test": "node --test"
     },
     "dependencies": {

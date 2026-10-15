@@ -4,6 +4,7 @@ import path from "node:path";
 import { Track } from "../models/Track.js";
 import { Share } from "../models/Share.js";
 import { Friendship } from "../models/Friendship.js";
+import { Playlist } from "../models/Playlist.js";
 import { auth, optionalAuth } from "../middleware/auth.middleware.js";
 import { canAccessTrack, requireOwner } from "../middleware/track.middleware.js";
 import { upload, UPLOADS } from "../middleware/upload.middleware.js";
@@ -156,6 +157,7 @@ router.delete("/:id", auth, loadTrack, requireOwner, async (req, res, next) => {
   try {
     await Track.findByIdAndDelete(req.track.id);
     await Share.deleteMany({ trackId: req.track.id });
+    await Playlist.updateMany({ tracks: req.track.id }, { $pull: { tracks: req.track.id } });
     
     const audioPath = path.join(UPLOADS, req.track.storedName);
     try {

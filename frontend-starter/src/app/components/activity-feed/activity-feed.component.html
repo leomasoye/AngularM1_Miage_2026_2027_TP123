@@ -96,6 +96,13 @@
                   >
                     <mat-icon>playlist_add</mat-icon>
                   </button>
+                  <button
+                    mat-icon-button
+                    (click)="openAddToPlaylist(track)"
+                    title="Ajouter à une playlist"
+                  >
+                    <mat-icon>playlist_add_circle</mat-icon>
+                  </button>
                   <app-like-button
                     [track]="track"
                     (trackUpdated)="onTrackLiked($event)"

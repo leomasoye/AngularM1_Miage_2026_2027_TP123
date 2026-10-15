@@ -1,0 +1,450 @@
+<section class="playlists-container animate-in">
+  <!-- Header / Hero -->
+  <div class="hero">
+    <p class="text-label" style="color: var(--orchid-300)">MES SÉLECTIONS</p>
+    <div class="hero-top-row">
+      <div>
+        <h1 class="text-display">Playlists</h1>
+        <p class="text-body text-secondary">
+          Organisez vos sélections musicales, écoutez-les en continu et partagez-les avec vos amis.
+        </p>
+      </div>
+
+      <div class="hero-actions">
+        <button mat-stroked-button (click)="loadPlaylists()" [disabled]="loading()" class="btn-refresh">
+          <mat-icon>refresh</mat-icon> Actualiser
+        </button>
+        <button type="button" class="btn-primary btn-new-playlist" (click)="openCreateModal()">
+          <mat-icon>add</mat-icon>
+          <span>Nouvelle playlist</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Onglets de filtrage -->
+    <div class="tabs-row">
+      <button
+        type="button"
+        class="tab-pill"
+        [class.active]="activeTab() === 'all'"
+        (click)="setTab('all')"
+      >
+        <mat-icon>all_inclusive</mat-icon>
+        <span>Toutes ({{ playlists().length }})</span>
+      </button>
+
+      <button
+        type="button"
+        class="tab-pill"
+        [class.active]="activeTab() === 'my'"
+        (click)="setTab('my')"
+      >
+        <mat-icon>person</mat-icon>
+        <span>Mes playlists</span>
+      </button>
+
+      <button
+        type="button"
+        class="tab-pill"
+        [class.active]="activeTab() === 'public'"
+        (click)="setTab('public')"
+      >
+        <mat-icon>public</mat-icon>
+        <span>Découvrir (Publiques)</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Messages d'erreur -->
+  @if (error()) {
+    <div class="alert-error" role="alert">
+      <span>{{ error() }}</span>
+      <button mat-button color="warn" (click)="loadPlaylists()">Réessayer</button>
+    </div>
+  }
+
+  <!-- État de chargement -->
+  @if (loading()) {
+    <div class="loading-state">
+      <mat-spinner diameter="44"></mat-spinner>
+      <p class="text-muted">Chargement de vos playlists...</p>
+    </div>
+  } @else {
+    <!-- Grille des playlists -->
+    <div class="playlists-grid">
+      @for (playlist of filteredPlaylists(); track playlist.id) {
+        <article class="glass-card playlist-card" [class.is-expanded]="expandedPlaylistId() === playlist.id">
+          <!-- Artwork / Pochette visuelle -->
+          <div class="playlist-cover-wrap" (click)="toggleExpand(playlist)">
+            <div class="cover-gradient">
+              <mat-icon class="cover-icon">queue_music</mat-icon>
+              <div class="vinyl-record"></div>
+            </div>
+
+            <!-- Bouton Play overlay -->
+            <button
+              type="button"
+              class="play-overlay-btn"
+              (click)="playAll(playlist, $event)"
+              title="Tout écouter"
+            >
+              <mat-icon>play_arrow</mat-icon>
+            </button>
+
+            <!-- Badge nombre de pistes -->
+            <div class="tracks-badge">
+              <mat-icon>audiotrack</mat-icon>
+              <span>{{ playlist.tracksCount || 0 }}</span>
+            </div>
+
+            <!-- Badge Visibilité -->
+            <div
+              class="vis-badge"
+              [class.private]="playlist.visibility === 'private'"
+              [title]="playlist.visibility === 'private' ? 'Playlist privée (vous et vos amis)' : 'Playlist publique'"
+            >
+              <mat-icon>{{ playlist.visibility === 'private' ? 'lock' : 'public' }}</mat-icon>
+            </div>
+          </div>
+
+          <!-- Contenu / Métadonnées -->
+          <div class="playlist-card-content">
+            <div class="title-row">
+              <h2 class="playlist-title" [title]="playlist.name" (click)="toggleExpand(playlist)">
+                {{ playlist.name }}
+              </h2>
+            </div>
+
+            <p class="playlist-description">
+              {{ playlist.description || 'Aucune description' }}
+            </p>
+
+            <!-- Créateur de la playlist -->
+            <div class="creator-row">
+              @if (playlist.ownerName) {
+                <div class="creator-info">
+                  <app-avatar
+                    [name]="playlist.ownerName"
+                    [avatarUrl]="playlist.ownerAvatarUrl"
+                    size="sm"
+                  ></app-avatar>
+                  <span class="creator-name">{{ isOwner(playlist) ? 'Vous' : playlist.ownerName }}</span>
+                </div>
+              }
+              <span class="created-date">{{ playlist.createdAt | date:'d MMM y' }}</span>
+            </div>
+
+            <!-- Actions principales -->
+            <div class="card-actions">
+              <button
+                type="button"
+                class="btn-action-play"
+                (click)="playAll(playlist, $event)"
+                [disabled]="(playlist.tracksCount || 0) === 0"
+                title="Écouter toute la playlist"
+              >
+                <mat-icon>play_circle</mat-icon>
+                <span>Écouter</span>
+              </button>
+
+              <button
+                mat-icon-button
+                (click)="addAllToQueue(playlist, $event)"
+                [disabled]="(playlist.tracksCount || 0) === 0"
+                title="Ajouter toute la sélection à la file d'attente"
+              >
+                <mat-icon>playlist_add</mat-icon>
+              </button>
+
+              <button
+                mat-icon-button
+                (click)="toggleExpand(playlist)"
+                [title]="expandedPlaylistId() === playlist.id ? 'Masquer les morceaux' : 'Voir les morceaux'"
+              >
+                <mat-icon>{{ expandedPlaylistId() === playlist.id ? 'expand_less' : 'expand_more' }}</mat-icon>
+              </button>
+
+              @if (isOwner(playlist)) {
+                <button
+                  mat-icon-button
+                  (click)="openEdit(playlist, $event)"
+                  title="Modifier la playlist"
+                >
+                  <mat-icon>edit</mat-icon>
+                </button>
+
+                <button
+                  mat-icon-button
+                  color="warn"
+                  (click)="deletePlaylist(playlist, $event)"
+                  [disabled]="deletingId() === playlist.id"
+                  title="Supprimer la playlist"
+                >
+                  @if (deletingId() === playlist.id) {
+                    <mat-spinner diameter="18"></mat-spinner>
+                  } @else {
+                    <mat-icon>delete</mat-icon>
+                  }
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Section détaillée des morceaux (Développée) -->
+          @if (expandedPlaylistId() === playlist.id) {
+            <div class="expanded-tracklist animate-in">
+              <div class="tracklist-header">
+                <span class="tracklist-title">
+                  <mat-icon>format_list_numbered</mat-icon>
+                  Morceaux de la playlist ({{ playlist.tracksCount || 0 }})
+                </span>
+              </div>
+
+              @if (loadingDetailsId() === playlist.id) {
+                <div class="tracklist-loading">
+                  <mat-spinner diameter="24"></mat-spinner>
+                  <span>Chargement des pistes...</span>
+                </div>
+              } @else if (!playlist.tracks || playlist.tracks.length === 0) {
+                <div class="tracklist-empty">
+                  <p>Cette playlist est encore vide.</p>
+                  <p class="sub-empty">Utilisez le bouton « + » sur vos pistes pour en ajouter !</p>
+                </div>
+              } @else {
+                <div class="tracklist-items">
+                  @for (track of playlist.tracks; track track.id; let idx = $index) {
+                    <div
+                      class="track-row"
+                      [class.playing]="player.currentTrack()?.id === track.id"
+                    >
+                      <span class="track-num">{{ idx + 1 }}</span>
+
+                      <button
+                        mat-icon-button
+                        class="btn-row-play"
+                        (click)="playTrack(track, $event)"
+                        [title]="player.currentTrack()?.id === track.id && player.isPlaying() ? 'Pause' : 'Écouter'"
+                      >
+                        <mat-icon>
+                          {{ player.currentTrack()?.id === track.id && player.isPlaying() ? 'pause_circle' : 'play_circle' }}
+                        </mat-icon>
+                      </button>
+
+                      <div class="track-row-info">
+                        <div class="track-row-title" [title]="track.title">{{ track.title }}</div>
+                        <div class="track-row-meta">
+                          {{ track.originalName }}
+                          @if (track.ownerName) {
+                            • Par {{ track.ownerName }}
+                          }
+                        </div>
+                      </div>
+
+                      <div class="track-row-actions">
+                        <app-like-button [track]="track"></app-like-button>
+
+                        <button
+                          mat-icon-button
+                          (click)="player.addToQueue(track)"
+                          title="Ajouter à la file d'attente"
+                        >
+                          <mat-icon>playlist_add</mat-icon>
+                        </button>
+
+                        @if (isOwner(playlist)) {
+                          <button
+                            mat-icon-button
+                            color="warn"
+                            (click)="removeTrack(playlist, track, $event)"
+                            title="Retirer de la playlist"
+                          >
+                            <mat-icon>remove_circle_outline</mat-icon>
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </article>
+      } @empty {
+        <div class="empty-state-full">
+          <mat-icon class="empty-big-icon">queue_music</mat-icon>
+          <h3>Aucune playlist trouvée</h3>
+          <p>
+            @if (activeTab() === 'my') {
+              Vous n'avez pas encore créé de playlist. Cliquez sur « Nouvelle playlist » ci-dessus !
+            } @else if (activeTab() === 'public') {
+              Aucune playlist publique n'est disponible pour le moment.
+            } @else {
+              Aucune playlist n'est disponible pour l'instant.
+            }
+          </p>
+          <button type="button" class="btn-primary" (click)="openCreateModal()">
+            <mat-icon>add</mat-icon>
+            <span>Créer ma première playlist</span>
+          </button>
+        </div>
+      }
+    </div>
+  }
+</section>
+
+<!-- MODAL DE CRÉATION -->
+@if (showCreateModal()) {
+  <div class="modal-backdrop" (click)="closeCreateModal()">
+    <div class="modal-card glass-card" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h2>
+          <mat-icon>playlist_add</mat-icon>
+          Nouvelle playlist
+        </h2>
+        <button mat-icon-button (click)="closeCreateModal()"><mat-icon>close</mat-icon></button>
+      </div>
+
+      <div class="modal-body-form">
+        <label class="form-label">Nom de la playlist *</label>
+        <input
+          type="text"
+          class="form-input"
+          placeholder="Ex: Solo Rock, Étude & Focus..."
+          [(ngModel)]="newPlaylistName"
+          maxlength="60"
+          autofocus
+        />
+
+        <label class="form-label" style="margin-top: 1rem;">Description (optionnelle)</label>
+        <textarea
+          class="form-textarea"
+          rows="3"
+          placeholder="Décrivez l'ambiance ou le contenu de votre playlist..."
+          [(ngModel)]="newPlaylistDesc"
+          maxlength="200"
+        ></textarea>
+
+        <label class="form-label" style="margin-top: 1rem;">Visibilité</label>
+        <div class="vis-options">
+          <div
+            class="vis-card-option"
+            [class.selected]="newPlaylistVisibility === 'public'"
+            (click)="newPlaylistVisibility = 'public'"
+          >
+            <mat-icon class="vis-opt-icon">public</mat-icon>
+            <div>
+              <strong>Publique</strong>
+              <p>Visible et écoutable par tous les utilisateurs.</p>
+            </div>
+          </div>
+
+          <div
+            class="vis-card-option"
+            [class.selected]="newPlaylistVisibility === 'private'"
+            (click)="newPlaylistVisibility = 'private'"
+          >
+            <mat-icon class="vis-opt-icon">lock</mat-icon>
+            <div>
+              <strong>Privée</strong>
+              <p>Accessible uniquement par vous et vos amis.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <button mat-button (click)="closeCreateModal()">Annuler</button>
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="submitCreate()"
+          [disabled]="creating() || !newPlaylistName.trim()"
+        >
+          @if (creating()) {
+            <mat-spinner diameter="18" color="accent"></mat-spinner>
+          } @else {
+            <mat-icon>check</mat-icon>
+            <span>Créer la playlist</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- MODAL D'ÉDITION -->
+@if (editingPlaylist()) {
+  <div class="modal-backdrop" (click)="closeEdit()">
+    <div class="modal-card glass-card" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h2>
+          <mat-icon>edit</mat-icon>
+          Modifier la playlist
+        </h2>
+        <button mat-icon-button (click)="closeEdit()"><mat-icon>close</mat-icon></button>
+      </div>
+
+      <div class="modal-body-form">
+        <label class="form-label">Nom de la playlist *</label>
+        <input
+          type="text"
+          class="form-input"
+          [(ngModel)]="editName"
+          maxlength="60"
+        />
+
+        <label class="form-label" style="margin-top: 1rem;">Description</label>
+        <textarea
+          class="form-textarea"
+          rows="3"
+          [(ngModel)]="editDesc"
+          maxlength="200"
+        ></textarea>
+
+        <label class="form-label" style="margin-top: 1rem;">Visibilité</label>
+        <div class="vis-options">
+          <div
+            class="vis-card-option"
+            [class.selected]="editVisibility === 'public'"
+            (click)="editVisibility = 'public'"
+          >
+            <mat-icon class="vis-opt-icon">public</mat-icon>
+            <div>
+              <strong>Publique</strong>
+              <p>Visible et écoutable par tous les utilisateurs.</p>
+            </div>
+          </div>
+
+          <div
+            class="vis-card-option"
+            [class.selected]="editVisibility === 'private'"
+            (click)="editVisibility = 'private'"
+          >
+            <mat-icon class="vis-opt-icon">lock</mat-icon>
+            <div>
+              <strong>Privée</strong>
+              <p>Accessible uniquement par vous et vos amis.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <button mat-button (click)="closeEdit()">Annuler</button>
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="submitEdit()"
+          [disabled]="updating() || !editName.trim()"
+        >
+          @if (updating()) {
+            <mat-spinner diameter="18" color="accent"></mat-spinner>
+          } @else {
+            <mat-icon>save</mat-icon>
+            <span>Enregistrer</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

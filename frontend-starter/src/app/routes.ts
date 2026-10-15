@@ -23,5 +23,13 @@ export const routes: Routes = [
   },
   { path: 'search', component: SearchResultsComponent, canActivate: [authGuard] },
   { path: 'friends', component: FriendsPageComponent, canActivate: [authGuard] },
+  {
+    path: 'playlists',
+    loadComponent: () =>
+      import('./components/playlists-page/playlists-page.component').then(
+        (m) => m.PlaylistsPageComponent
+      ),
+    canActivate: [authGuard],
+  },
   { path: '**', redirectTo: 'tracks' },
 ];
