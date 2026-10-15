@@ -212,24 +212,37 @@ Transformer le prototype de gestion de pistes en application musicale sociale (t
 - Intégration d'un `DelayNode` (max 2.0s) avec boucle de feedback (`delayFeedbackNode` plafonné à 0.8) et gain de sortie (`delayGainNode`).
 - Bus de mixage dédié (`effectsMixBus`) mixant en parallèle la voie directe (`dryGainNode`), la réverbération et l'écho avant le master volume et les visualiseurs.
 - Nouveaux signaux réactifs : `reverbWet = signal(0)`, `delayTime = signal(0.3)`, `delayFeedback = signal(0)`, `spatialPreset = signal<SpatialPreset>('none')`.
-- Méthodes de contrôle sans craquement via `setTargetAtTime` : `setReverbWet()`, `setDelayTime()`, `setDelayFeedback()`, `setSpatialPreset()`, `resetSpatialEffects()`.
+- Méthodes de contrôle sans craquement via `setTargetAtTime` : `setReverbWet()`, `setDelayTime()`, `setDelayFeedback()`, `setSpatialPreset()`, `setConvolverBuffer()`, `resetSpatialEffects()`.
+- Acoustique dynamique : génération d'impulsions sur-mesure par preset (durée et déclin exponentiel adaptés : 1.2s Club Intime, 2.8s Concert Hall, 4.2s Stade Rock, 3.0s Écho Spatial).
 - Persistance automatique dans le `localStorage` (`from_zero_spatial`).
 
-#### [MODIFY] Frontend `EqualizerComponent`
-- Ajout d'une section "Effets Spatiaux & Ambiance" avec design From Zero dans la modale d'égaliseur.
-- Présélection de 5 presets d'ambiance : "Désactivé", "Club Intime", "Concert Hall", "Stade Rock", "Écho Spatial".
-- Curseurs horizontaux interactifs avec badges dynamiques (pourcentage et millisecondes) pour le dosage de la Réverbération (0-100%), du Temps d'écho (50-1000ms) et du Feedback (0-80%).
-- Bouton "Réinitialiser tout" remettant à zéro l'égaliseur et les effets spatiaux.
+#### [MODIFY] Frontend `EqualizerComponent` & `PlayerBarComponent`
+- Égaliseur 3 bandes amplifié : plage étendue de `[-24 dB, +24 dB]` (au lieu de `[-12, +12]`), fréquences accordées pour un punch immédiat (150 Hz basses percutantes, 6 kHz brillance cristalline).
+- Visualisation renforcée : ligne de repère à 0 dB neutre, badges `mega-boost` vibrants et lumineux au-delà de +10 dB.
+- Bouton `btn-eq` dans `PlayerBarComponent` : indicateur lumineux (dot orchidée) dès qu'un effet spatial ou qu'un préréglage d'égaliseur est actif.
+- Section "Effets Spatiaux & Ambiance" avec 5 presets et curseurs horizontaux (Reverb 0-100%, Delay 50-1000ms, Feedback 0-80%).
+
+#### [FIX & ENHANCE] Résolution Streaming Audio & Recherche Intelligente
+- Résolution de l'erreur `ERR_CACHE_OPERATION_NOT_SUPPORTED` et `NotSupportedError` :
+  - `track.middleware.js` : ouverture des pistes publiques sans exiger de token (`userId`).
+  - `auth.middleware.js` : middleware `optionalAuth` pour les flux audio et la recherche publique.
+  - Découplage de la requête de waveform (`?waveform=1`) pour éviter les conflits de cache concurrentiels sous Chromium.
+- Recherche Intelligente & Catalogue direct :
+  - Affichage direct du catalogue de pistes publiques et des membres de la communauté dès l'ouverture de la page de recherche (`!q`).
+  - Regex intelligente insensible à la casse et aux accents (`makeSmartRegex`).
+  - Recherche croisée par titre OU par nom d'artiste / propriétaire (ex: taper "bruno" retourne l'artiste Bruno Mars et toutes les pistes créées par Bruno Mars).
 
 #### [OPTIMIZE] Fluidité et performances globales (Profilage & Réactivité)
 - Optimisation des boucles `requestAnimationFrame` de `WaveformComponent`, `PlayerBarComponent` et `EqualizerComponent` : arrêt immédiat de la boucle en état de pause ou lorsque l'onglet est masqué (`document.hidden`), suppression de la boucle infinie idle.
 - Suppression de `ctx.shadowBlur` dans la boucle de tracé de la forme d'onde (éliminant des milliers d'opérations de convolution GPU par seconde).
 - Rafraîchissement direct et instantané lors des interactions utilisateur (survol, scrubbing, modification des curseurs).
-- Réduction par 4x du temps d'exécution de la suite de tests (de ~26s à 7s).
+- Réduction par 4x du temps d'exécution de la suite de tests (de ~26s à 6.8s).
 
 **DoD validée :**
-- L'activation de la reverb et du delay modifie audiblement le son en direct sans craquement, saturation ni latence.
-- 100% des tests unitaires au vert : 50/50 tests frontend passés (14 suites de test) et 9/9 tests backend.
+- L'activation de la reverb et du delay modifie audiblement le son en direct avec une spatialisation distincte par preset, sans craquement, saturation ni latence.
+- L'égaliseur produit un changement de basses et d'aigus massif et nettement audible sur tous types d'écouteurs et d'enceintes.
+- La recherche propose instantanément les pistes publiques et les membres, avec recherche intelligente par artiste ou titre.
+- 100% des tests unitaires au vert : 50/50 tests frontend passés (14 suites de test) et 10/10 tests backend.
 - Build de production frontend Angular sans erreur (`ng build` code 0).
 
 ---

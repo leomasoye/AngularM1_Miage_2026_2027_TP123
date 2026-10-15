@@ -915,19 +915,48 @@ export class PlayerService implements OnDestroy {
     this.saveSpatialToStorage();
   }
 
+  setConvolverBuffer(duration: number, decay: number): void {
+    if (!this.audioCtx || typeof this.audioCtx.createConvolver !== 'function') return;
+    try {
+      const impulse = this.createImpulseResponse(duration, decay);
+      if (!impulse) return;
+
+      if (!this.convolverNode) {
+        this.convolverNode = this.audioCtx.createConvolver();
+        this.convolverNode.buffer = impulse;
+        this.connectNodes();
+      } else {
+        try {
+          this.convolverNode.buffer = impulse;
+        } catch {
+          // Re-créer le ConvolverNode si le buffer ne peut être réassigné à chaud
+          const newConvolver = this.audioCtx.createConvolver();
+          newConvolver.buffer = impulse;
+          this.convolverNode = newConvolver;
+          this.connectNodes();
+        }
+      }
+    } catch (e) {
+      console.warn('[PlayerService] Échec du rechargement de la réponse impulsionnelle:', e);
+    }
+  }
+
   setSpatialPreset(name: 'none' | 'room' | 'hall' | 'stadium' | 'space-echo'): void {
-    const presets: Record<string, { reverb: number; delay: number; feedback: number }> = {
-      none: { reverb: 0, delay: 0.3, feedback: 0 },
-      room: { reverb: 0.25, delay: 0.15, feedback: 0.15 },
-      hall: { reverb: 0.55, delay: 0.3, feedback: 0.3 },
-      stadium: { reverb: 0.8, delay: 0.45, feedback: 0.5 },
-      'space-echo': { reverb: 0.4, delay: 0.65, feedback: 0.65 },
+    const presets: Record<string, { reverb: number; delay: number; feedback: number; duration: number; decay: number }> = {
+      none: { reverb: 0, delay: 0.3, feedback: 0, duration: 2.0, decay: 2.0 },
+      room: { reverb: 0.25, delay: 0.15, feedback: 0.15, duration: 1.2, decay: 3.5 },
+      hall: { reverb: 0.55, delay: 0.3, feedback: 0.3, duration: 2.8, decay: 2.0 },
+      stadium: { reverb: 0.8, delay: 0.45, feedback: 0.5, duration: 4.2, decay: 1.4 },
+      'space-echo': { reverb: 0.4, delay: 0.65, feedback: 0.65, duration: 3.0, decay: 1.8 },
     };
 
     const target = presets[name] || presets['none'];
     this.setReverbWet(target.reverb);
     this.setDelayTime(target.delay);
     this.setDelayFeedback(target.feedback);
+    if (name !== 'none') {
+      this.setConvolverBuffer(target.duration, target.decay);
+    }
     this.spatialPreset.set(name);
     this.saveSpatialToStorage();
   }

@@ -318,6 +318,18 @@
   box-shadow: 0 0 6px rgba(155, 63, 212, 0.9);
 }
 
+/* BOUTON ÉGALISEUR & EFFETS SPATIAUX */
+.btn-eq {
+  color: var(--text-secondary) !important;
+  position: relative !important;
+  transition: color var(--transition-fast), transform var(--transition-fast) !important;
+}
+
+.btn-eq:hover {
+  color: var(--text-primary) !important;
+  transform: scale(1.08);
+}
+
 /* BOUTON FILE D'ATTENTE */
 .btn-queue {
   color: var(--text-secondary) !important;

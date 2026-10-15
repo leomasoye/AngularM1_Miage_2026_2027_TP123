@@ -232,8 +232,9 @@
       <button
         mat-icon-button
         class="btn-eq"
+        [class.active-mode]="player.spatialPreset() !== 'none' || player.currentPreset() !== 'flat' || player.reverbWet() > 0 || player.delayFeedback() > 0"
         (click)="openEqualizer()"
-        title="Ouvrir l'égaliseur et les VU-mètres"
+        title="Ouvrir l'égaliseur et les effets spatiaux (Reverb, Écho)"
       >
         <mat-icon>tune</mat-icon>
       </button>
