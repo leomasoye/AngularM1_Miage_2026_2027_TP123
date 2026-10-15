@@ -1,1 +1,39 @@
-<canvas #glowCanvas class="glow-canvas"></canvas>
+<div
+  #glowContainer
+  class="ambient-glow-container"
+  [class.visible]="glow.isEnabled() && player.isPlaying()"
+  [attr.aria-hidden]="true"
+>
+  <!-- Orbe Orchid principale (Basses & kicks) -->
+  <div class="ambient-orb-wrapper float-orchid">
+    <div class="ambient-orb orb-orchid"></div>
+  </div>
+
+  <!-- Orbe Bleu Électrique (Médiums & mélodie) -->
+  <div class="ambient-orb-wrapper float-blue">
+    <div class="ambient-orb orb-blue"></div>
+  </div>
+
+  <!-- Orbe d'ancrage sub-bass centrale -->
+  <div class="ambient-orb-wrapper float-sub">
+    <div class="ambient-orb orb-sub"></div>
+  </div>
+
+  <!-- Particules ambiantes légères en pur CSS -->
+  @if (glow.particlesEnabled()) {
+    <div class="particles-field">
+      @for (p of particles; track p.id) {
+        <div
+          class="dust-particle"
+          [style.left.%]="p.x"
+          [style.top.%]="p.y"
+          [style.width.px]="p.size"
+          [style.height.px]="p.size"
+          [style.background]="p.color"
+          [style.animationDuration.s]="p.duration"
+          [style.animationDelay.s]="p.delay"
+        ></div>
+      }
+    </div>
+  }
+</div>

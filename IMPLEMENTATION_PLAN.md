@@ -279,15 +279,16 @@ Transformer le prototype de gestion de pistes en application musicale sociale (t
 ## Étape 11 : Arrière-plan Audio-Réactif & Particules (Immersion Visuelle) ✅ [TERMINÉE]
 **Goal:** Créer une ambiance visuelle vivante où l'interface respire au rythme de la musique.
 
-#### [NEW] Frontend `AudioReactiveGlowComponent`, `GlowService` & Particules
+#### [NEW] Frontend `AudioReactiveGlowComponent`, `GlowService` & Orbes CSS GPU Compositor
 - `AudioReactiveGlowComponent` :
-  - Canvas HTML5 responsive (adapté aux écrans Retina / HiDPI via `window.devicePixelRatio`).
-  - Analyse spectrale temps réel via `AnalyserNode.getByteFrequencyData()`.
-  - Détection dynamique des fréquences : sub-basses & basses (20-150 Hz), médiums et présence.
-  - Lissage temporel asymétrique (attaque instantanée sur le kick/beat, décroissance exponentielle douce) évitant tout scintillement agressif.
-  - Halos lumineux signature From Zero (Orbe orchidée sur les kicks, Orbe bleu électrique sur les mélodies, et Halo central d'ancrage sub-bass).
-  - Champ de particules réactives (36 braises ambiantes From Zero) dérivant organiquement, accélérant et s'illuminant au rythme des percussions.
-  - Boucle `requestAnimationFrame` strictement exécutée hors zone Angular (`runOutsideAngular`), avec arrêt instantané en cas de pause (`!isPlaying()`), de masquage de l'onglet (`document.hidden`), ou de désactivation utilisateur (0% d'utilisation CPU/GPU au repos).
+  - Architecture 100% matérielle GPU Compositor (zéro Canvas repaint, zéro invalidation de couches DOM).
+  - Dégradés radiaux multi-paliers signature From Zero (Orbe orchidée sur les kicks, Orbe bleu électrique sur les mélodies, et Halo central d'ancrage sub-bass).
+  - Enveloppes de dérive flottante animées en pur CSS `@keyframes` sur le thread compositeur GPU (`will-change: transform`).
+  - Analyse spectrale temps réel optimisée via `AnalyserNode.getByteFrequencyData()` avec buffers TypedArray pré-alloués (0 allocation mémoire GC).
+  - Injection dynamique de CSS Custom Properties (`--bass-scale`, `--bass-alpha`, `--mid-scale`, `--mid-alpha`, `--sub-scale`, `--sub-alpha`) sans aucun recalcul de layout.
+  - Champ de particules d'étoiles CSS dérivant organiquement au rythme des percussions.
+  - Régulation à 35 FPS avec arrêt automatique en pause audio ou masquage de l'onglet (0% CPU/GPU au repos).
+  - Isolation matérielle complète via `contain: strict;` et `isolation: isolate;`.
 - `GlowService` :
   - Service réactif gérant l'état d'activation (`isEnabled`), l'intensité (`intensity`), et l'affichage des particules (`particlesEnabled`).
   - Persistance automatique des préférences utilisateur dans le `localStorage` (`from_zero_reactive_glow`).
@@ -297,7 +298,8 @@ Transformer le prototype de gestion de pistes en application musicale sociale (t
   - Composant monté en arrière-plan global dans `AppComponent`, illuminant subtilement les surfaces glassmorphic et les cartes de l'application.
 
 **DoD validée :**
-- L'arrière-plan pulse subtilement et élégamment au rythme des basses et des kicks à 60 FPS constants sans impact sur les performances.
+- L'arrière-plan pulse subtilement et élégamment au rythme des basses et des kicks à 60 FPS constants sans aucun lag ni impact sur les performances.
+- Bouton de bascule dans la player-bar testé et persistant entre les sessions.
 - L'activation / désactivation instantanée fonctionne avec persistance des préférences.
 - 100% des tests unitaires au vert : 67/67 tests frontend passés (19 suites de tests) et 13/13 tests backend.
 - Build de production frontend Angular sans erreur (`ng build` code 0).

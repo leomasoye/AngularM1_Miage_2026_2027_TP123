@@ -32,8 +32,9 @@ describe('AudioReactiveGlowComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('devrait posséder une référence sur le canvas de rendu', () => {
+  it('devrait posséder une référence sur le conteneur ambiant', () => {
     fixture.detectChanges();
-    expect(component.canvasRef()).toBeTruthy();
+    expect(component.containerRef()).toBeTruthy();
+    expect(component.particles.length).toBeGreaterThan(0);
   });
 });

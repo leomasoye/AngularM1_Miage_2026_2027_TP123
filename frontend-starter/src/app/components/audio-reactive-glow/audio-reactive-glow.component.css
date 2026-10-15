@@ -8,11 +8,154 @@
   z-index: 0;
   overflow: hidden;
   display: block;
-  background: transparent;
+  contain: strict;
+  isolation: isolate;
 }
 
-.glow-canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
+.ambient-glow-container {
+  position: absolute;
+  inset: -15%;
+  width: 130%;
+  height: 130%;
+  opacity: 0;
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  contain: strict;
+  will-change: opacity;
+}
+
+.ambient-glow-container.visible {
+  opacity: 1;
+}
+
+/* Enveloppes de dérive flottante (GPU Compositor 100% matériel) */
+.ambient-orb-wrapper {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.float-orchid {
+  animation: floatDrift1 18s ease-in-out infinite alternate;
+}
+
+.float-blue {
+  animation: floatDrift2 22s ease-in-out infinite alternate;
+}
+
+.float-sub {
+  animation: floatDrift3 26s ease-in-out infinite alternate;
+}
+
+/* Sphères lumineuses From Zero */
+.ambient-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform, opacity;
+  transform-origin: center center;
+  transition: transform 0.08s ease-out, opacity 0.1s ease-out;
+}
+
+/* ORBE 1 : Orchid - Réactive aux basses / kicks */
+.orb-orchid {
+  top: 10%;
+  left: 15%;
+  width: 58vw;
+  height: 58vw;
+  max-width: 950px;
+  max-height: 950px;
+  background: radial-gradient(
+    circle,
+    rgba(184, 98, 238, 0.45) 0%,
+    rgba(155, 63, 212, 0.3) 28%,
+    rgba(95, 20, 145, 0.16) 52%,
+    rgba(40, 8, 65, 0.05) 72%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  transform: scale3d(var(--bass-scale, 1), var(--bass-scale, 1), 1);
+  opacity: var(--bass-alpha, 0.5);
+}
+
+/* ORBE 2 : Bleu Électrique - Réactive aux médiums / mélodie */
+.orb-blue {
+  bottom: 8%;
+  right: 12%;
+  width: 54vw;
+  height: 54vw;
+  max-width: 880px;
+  max-height: 880px;
+  background: radial-gradient(
+    circle,
+    rgba(26, 127, 232, 0.42) 0%,
+    rgba(20, 95, 180, 0.26) 28%,
+    rgba(10, 50, 110, 0.14) 52%,
+    rgba(4, 20, 55, 0.04) 72%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  transform: scale3d(var(--mid-scale, 1), var(--mid-scale, 1), 1);
+  opacity: var(--mid-alpha, 0.45);
+}
+
+/* ORBE 3 : Sub-bass centrale pour ancrage profond */
+.orb-sub {
+  top: 32%;
+  left: 32%;
+  width: 48vw;
+  height: 48vw;
+  max-width: 780px;
+  max-height: 780px;
+  background: radial-gradient(
+    circle,
+    rgba(216, 154, 248, 0.32) 0%,
+    rgba(90, 170, 245, 0.18) 45%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  transform: scale3d(var(--sub-scale, 1), var(--sub-scale, 1), 1);
+  opacity: var(--sub-alpha, 0.25);
+}
+
+/* Particules de poussière d'étoiles CSS */
+.particles-field {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.dust-particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: var(--particle-alpha, 0.4);
+  animation: floatDust 12s linear infinite;
+  will-change: transform;
+}
+
+/* Keyframes de dérive 100% GPU */
+@keyframes floatDrift1 {
+  0% { transform: translate3d(-30px, -20px, 0); }
+  100% { transform: translate3d(35px, 25px, 0); }
+}
+
+@keyframes floatDrift2 {
+  0% { transform: translate3d(30px, 25px, 0); }
+  100% { transform: translate3d(-35px, -30px, 0); }
+}
+
+@keyframes floatDrift3 {
+  0% { transform: translate3d(-15px, 20px, 0); }
+  100% { transform: translate3d(20px, -15px, 0); }
+}
+
+@keyframes floatDust {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(20px, -40px, 0);
+  }
+  100% {
+    transform: translate3d(0, -80px, 0);
+  }
 }

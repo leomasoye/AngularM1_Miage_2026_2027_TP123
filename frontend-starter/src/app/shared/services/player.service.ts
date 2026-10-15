@@ -1004,19 +1004,29 @@ export class PlayerService implements OnDestroy {
     }
   }
 
-  // --- Données d'analyse et VU-mètres Stéréo ---
-  getFrequencyData(): Uint8Array {
+  // --- Données d'analyse et VU-mètres Stéréo (Buffers réutilisés pour 0 allocation mémoire) ---
+  private freqDataBuffer?: Uint8Array<ArrayBuffer>;
+  private timeDataBuffer?: Uint8Array<ArrayBuffer>;
+  private rmsBuffer?: Uint8Array<ArrayBuffer>;
+
+  getFrequencyData(): Uint8Array<ArrayBuffer> {
     if (!this.analyserNode) return new Uint8Array(0);
-    const dataArray = new Uint8Array(this.analyserNode.frequencyBinCount);
-    this.analyserNode.getByteFrequencyData(dataArray);
-    return dataArray;
+    const count = this.analyserNode.frequencyBinCount;
+    if (!this.freqDataBuffer || this.freqDataBuffer.length !== count) {
+      this.freqDataBuffer = new Uint8Array(new ArrayBuffer(count));
+    }
+    this.analyserNode.getByteFrequencyData(this.freqDataBuffer);
+    return this.freqDataBuffer;
   }
 
-  getTimeDomainData(): Uint8Array {
+  getTimeDomainData(): Uint8Array<ArrayBuffer> {
     if (!this.analyserNode) return new Uint8Array(0);
-    const dataArray = new Uint8Array(this.analyserNode.fftSize);
-    this.analyserNode.getByteTimeDomainData(dataArray);
-    return dataArray;
+    const size = this.analyserNode.fftSize;
+    if (!this.timeDataBuffer || this.timeDataBuffer.length !== size) {
+      this.timeDataBuffer = new Uint8Array(new ArrayBuffer(size));
+    }
+    this.analyserNode.getByteTimeDomainData(this.timeDataBuffer);
+    return this.timeDataBuffer;
   }
 
   getStereoVULevels(): { left: number; right: number; leftPeak: number; rightPeak: number } {
@@ -1042,14 +1052,17 @@ export class PlayerService implements OnDestroy {
   }
 
   private computeRMS(analyser: AnalyserNode): number {
-    const buffer = new Uint8Array(analyser.fftSize);
-    analyser.getByteTimeDomainData(buffer);
+    const size = analyser.fftSize;
+    if (!this.rmsBuffer || this.rmsBuffer.length !== size) {
+      this.rmsBuffer = new Uint8Array(new ArrayBuffer(size));
+    }
+    analyser.getByteTimeDomainData(this.rmsBuffer);
     let sum = 0;
-    for (let i = 0; i < buffer.length; i++) {
-      const val = (buffer[i] - 128) / 128;
+    for (let i = 0; i < size; i++) {
+      const val = (this.rmsBuffer[i] - 128) / 128;
       sum += val * val;
     }
-    const rms = Math.sqrt(sum / buffer.length);
+    const rms = Math.sqrt(sum / size);
     return Math.min(1, rms * 2.8);
   }
 
