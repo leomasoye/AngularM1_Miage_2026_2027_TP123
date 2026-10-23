@@ -33,6 +33,15 @@ export class AppComponent implements OnInit {
   readonly pendingCount = signal(0);
 
   ngOnInit(): void {
+    if (this.auth.isLoggedIn()) {
+      this.auth
+        .profile()
+        .pipe(
+          catchError(() => of(null)),
+          takeUntilDestroyed(this.destroyRef)
+        )
+        .subscribe();
+    }
     this.setupPendingPolling();
   }
 

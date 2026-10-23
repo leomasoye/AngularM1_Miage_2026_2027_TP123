@@ -28,6 +28,7 @@ describe('AuthService', () => {
     
     // Nettoyage avant chaque test
     localStorage.removeItem('gpc_token');
+    localStorage.removeItem('gpc_user');
     service.token.set(null);
     service.currentUser.set(null);
   });
@@ -48,6 +49,7 @@ describe('AuthService', () => {
     req.flush(mockResponse);
 
     expect(localStorage.getItem('gpc_token')).toBe('mock-jwt-token');
+    expect(localStorage.getItem('gpc_user')).toBe(JSON.stringify(mockResponse.user));
     expect(service.token()).toBe('mock-jwt-token');
     expect(service.currentUser()?.name).toBe('Test');
   });
