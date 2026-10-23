@@ -65,25 +65,35 @@ git checkout main
 À partir du socle des 3 TP, l'application a été transformée en une **plateforme musicale et sociale** haut de gamme, inspirée des fonctionnalités phares de Spotify et de l'identité visuelle de l'album *From Zero* de Linkin Park.
 
 ### 🌟 Fonctionnalités clés :
-1. **Design System "From Zero" & Angular Material (M3) :**
-   - Palette sombre immersive : fond charbon (`#0d0d0f`), touches d'orchidée (`#9b3fd4`) et de bleu électrique (`#1a7fe8`).
-   - Typographie moderne Google Font *Outfit*, composants M3 personnalisés et cartes en glassmorphism.
+1. **Design System Évolué & Multi-Thématisation (7 thèmes dynamiques) :**
+   - Palette sombre immersive initiale *From Zero* (charbon, orchidée, bleu électrique), désormais déclinable en **7 thèmes complets** personnalisables en direct (*From Zero*, *Cyberpunk Neon*, *Emerald Matrix*, *Sunset Crimson*, *Sapphire Deep*, *Amethyst Purple*, *Monochrome Stealth*).
+   - Page dédiée **Paramètres** (`/settings`) avec aperçu temps réel de l'orbe de couleur, personnalisation du volume par défaut et bascules d'effets visuels.
+   - Adaptation intégrale de tous les éléments UI et graphiques : pochettes de playlists fluides (`--gradient-marble`), avatars sans photo, barres de volume, égaliseur et canvas Web Audio.
+   - Typographie Google Font *Outfit*, composants Angular Material 3 personnalisés et surfaces en glassmorphism.
 2. **Gestion de la Visibilité & Sécurité :**
    - Contrôle granulaire par piste : `public` (accessible à tous) ou `private` (accessible uniquement au propriétaire et aux amis autorisés).
-   - Sécurisation du flux de streaming audio avec réponse 404 neutre en cas d'accès non autorisé.
+   - Sécurisation du flux de streaming audio avec réponse 404 neutre en cas d'accès non autorisé et support des en-têtes CORS pour la Web Audio API.
 3. **Dimension Sociale & Partage :**
-   - Système d'amis complet : recherche d'utilisateurs, envoi de requêtes, acceptation / refus et suppression d'amis.
-   - Système de « J'aime » (Likes) en temps réel sur les pistes.
-   - Modal de partage direct de pistes privées à des amis sélectionnés.
-   - Fil d'activité (Activity Feed) présentant les dernières pistes partagées par vos amis.
+   - Système d'amis complet : recherche d'utilisateurs, envoi de requêtes, acceptation / refus et suppression d'amis avec cascade sur les partages.
+   - Système de « J'aime » (Likes) optimiste en temps réel sur les pistes.
+   - Modale de partage direct de pistes privées à des amis sélectionnés.
+   - Fil d'activité (Activity Feed) chronologique avec pagination par curseur et polling intelligent toutes les 30s (mis en pause hors écran).
+   - Avatars utilisateur personnalisés (upload JPEG/PNG/WebP ou initiales dynamiques stylisées).
 4. **Recherche Globale Intelligente :**
-   - Moteur de recherche instantané filtrant pistes et profils utilisateurs (sans exposition d'adresses e-mail).
-5. **Lecteur Audio Avancé & Web Audio API :**
-   - Barre de lecture persistante en bas d'écran avec contrôle complet de la lecture.
-   - Visualisations audio réactives en temps réel (Audio Reactive Glow, visualiseur de fréquences et particules dynamiques).
-   - Égaliseur audio (EQ) et gestion du volume.
-6. **Gestion des Playlists :**
-   - Création de playlists personnalisées, ajout/retrait de morceaux et écoute continue.
+   - Moteur de recherche instantané insensible aux accents et à la casse, filtrant pistes et membres de la communauté (sans fuite d'adresses e-mail).
+   - Affichage immédiat du catalogue complet de découverte lorsque la barre est vide.
+5. **Lecteur Audio Avancé, Web Audio API & Effets Spatiaux :**
+   - Barre de lecture persistante en bas d'écran avec contrôles complets : lecture/pause, volume avec jauge colorée, précédent, suivant, lecture aléatoire (*Shuffle*), répétition (*Repeat* none/all/one), et file d'attente interactive (*Queue Drawer*).
+   - **Waveform interactive** : forme d'onde décodée en 120 barres d'amplitude (`decodeAudioData`), scrubbing fluide, survol avec timestamp précis et accessibilité ARIA.
+   - **Égaliseur 3 bandes amplifié** : Basses, Médiums, Aigus (plage `[-24 dB, +24 dB]`) avec 4 préréglages, persistance `localStorage` et VU-mètres stéréo réactifs (canaux Gauche & Droite) avec indicateur de crête.
+   - **Effets spatiaux en direct** : Réverbération par convolution (`ConvolverNode` simulant Club, Concert Hall, Arena) et Delay/Écho avec feedback stéréo (`DelayNode`).
+6. **Immersion Visuelle & Arrière-plan Audio-Réactif :**
+   - Composant d'ambiance 100% matériel sur GPU Compositor (`AudioReactiveGlowComponent`) pulsant au rythme des kicks et des fréquences musicales, avec champ de poussières d'étoiles CSS dérivant en temps réel selon les teintes du thème choisi.
+7. **Gestion des Playlists :**
+   - Création de playlists publiques ou privées, ajout/retrait instantané de morceaux depuis n'importe quelle vue (`AddToPlaylistModal`), lecture continue d'une playlist complète en 1 clic et ajout groupé à la file d'attente.
+8. **Qualité & Suite de Tests :**
+   - **79 tests unitaires frontend** (21 fichiers de test Vitest) et **13 tests backend** (Mocha/Chai/Supertest) 100% au vert.
+   - Compilation et bundling de production sans avertissement (`ng build`).
 
 ---
 
