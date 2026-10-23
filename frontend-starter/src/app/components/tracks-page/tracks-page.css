@@ -24,8 +24,8 @@
 }
 
 @keyframes orchidPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(155, 63, 212, 0.4); }
-  50%       { box-shadow: 0 0 0 8px rgba(155, 63, 212, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--orchid-rgb), 0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(var(--orchid-rgb), 0); }
 }
 
 ::ng-deep .mat-mdc-text-field-wrapper {

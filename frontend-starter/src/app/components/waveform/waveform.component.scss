@@ -9,17 +9,17 @@
   outline: none;
   border-radius: var(--radius-sm);
   background: rgba(13, 13, 15, 0.25);
-  border: 1px solid rgba(155, 63, 212, 0.1);
+  border: 1px solid rgba(var(--orchid-rgb), 0.1);
   padding: 0 4px;
   transition: background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
 
   &:hover {
     background: rgba(26, 26, 38, 0.35);
-    border-color: rgba(155, 63, 212, 0.3);
+    border-color: rgba(var(--orchid-rgb), 0.3);
   }
 
   &:focus-visible {
-    box-shadow: 0 0 0 2px rgba(155, 63, 212, 0.6);
+    box-shadow: 0 0 0 2px rgba(var(--orchid-rgb), 0.6);
   }
 }
 
@@ -58,7 +58,7 @@
   transform: translateX(-50%);
   background: var(--bg-elevated);
   color: var(--text-primary);
-  border: 1px solid rgba(155, 63, 212, 0.4);
+  border: 1px solid rgba(var(--orchid-rgb), 0.4);
   border-radius: var(--radius-sm);
   padding: 2px 7px;
   font-size: 0.72rem;
@@ -78,7 +78,7 @@
     transform: translateX(-50%);
     border-width: 4px 4px 0 4px;
     border-style: solid;
-    border-color: rgba(155, 63, 212, 0.4) transparent transparent transparent;
+    border-color: rgba(var(--orchid-rgb), 0.4) transparent transparent transparent;
   }
 }
 
@@ -108,7 +108,7 @@
   height: 100%;
   background: #ffffff;
   border-radius: 1px;
-  box-shadow: 0 0 8px rgba(155, 63, 212, 0.9), 0 0 16px rgba(26, 127, 232, 0.8);
+  box-shadow: 0 0 8px rgba(var(--orchid-rgb), 0.9), 0 0 16px rgba(var(--blue-rgb), 0.8);
 }
 
 .playhead-glow {
@@ -120,7 +120,7 @@
   height: 6px;
   border-radius: 50%;
   background: #ffffff;
-  box-shadow: 0 0 10px #9b3fd4, 0 0 16px #1a7fe8;
+  box-shadow: 0 0 10px var(--orchid-500), 0 0 16px var(--blue-500);
 }
 
 /* Shimmer de décodage */
@@ -131,7 +131,7 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(155, 63, 212, 0.15) 50%,
+    rgba(var(--orchid-rgb), 0.15) 50%,
     transparent 100%
   );
   background-size: 200% 100%;

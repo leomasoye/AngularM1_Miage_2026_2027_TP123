@@ -57,7 +57,7 @@
   transform-origin: center center;
 }
 
-/* ORBE 1 : Orchid - Réactive aux basses / kicks */
+/* ORBE 1 : Couleur Primaire - Réactive aux basses / kicks */
 .orb-orchid {
   top: 10%;
   left: 15%;
@@ -67,17 +67,18 @@
   max-height: 950px;
   background: radial-gradient(
     circle,
-    rgba(184, 98, 238, 0.45) 0%,
-    rgba(155, 63, 212, 0.3) 28%,
-    rgba(95, 20, 145, 0.16) 52%,
-    rgba(40, 8, 65, 0.05) 72%,
-    rgba(0, 0, 0, 0) 100%
+    var(--orchid-300) 0%,
+    var(--orchid-500) 28%,
+    var(--orchid-700) 52%,
+    var(--orchid-900) 72%,
+    transparent 100%
   );
+  filter: blur(60px);
   transform: scale3d(var(--bass-scale, 1), var(--bass-scale, 1), 1);
-  opacity: var(--bass-alpha, 0.5);
+  opacity: calc(var(--bass-alpha, 0.5) * 0.45);
 }
 
-/* ORBE 2 : Bleu Électrique - Réactive aux médiums / mélodie */
+/* ORBE 2 : Couleur Secondaire - Réactive aux médiums / mélodie */
 .orb-blue {
   bottom: 8%;
   right: 12%;
@@ -87,14 +88,15 @@
   max-height: 880px;
   background: radial-gradient(
     circle,
-    rgba(26, 127, 232, 0.42) 0%,
-    rgba(20, 95, 180, 0.26) 28%,
-    rgba(10, 50, 110, 0.14) 52%,
-    rgba(4, 20, 55, 0.04) 72%,
-    rgba(0, 0, 0, 0) 100%
+    var(--blue-300) 0%,
+    var(--blue-500) 28%,
+    var(--blue-700) 52%,
+    var(--blue-900) 72%,
+    transparent 100%
   );
+  filter: blur(60px);
   transform: scale3d(var(--mid-scale, 1), var(--mid-scale, 1), 1);
-  opacity: var(--mid-alpha, 0.45);
+  opacity: calc(var(--mid-alpha, 0.45) * 0.45);
 }
 
 /* ORBE 3 : Sub-bass centrale pour ancrage profond */
@@ -107,12 +109,13 @@
   max-height: 780px;
   background: radial-gradient(
     circle,
-    rgba(216, 154, 248, 0.32) 0%,
-    rgba(90, 170, 245, 0.18) 45%,
-    rgba(0, 0, 0, 0) 100%
+    var(--orchid-100) 0%,
+    var(--blue-300) 45%,
+    transparent 100%
   );
+  filter: blur(70px);
   transform: scale3d(var(--sub-scale, 1), var(--sub-scale, 1), 1);
-  opacity: var(--sub-alpha, 0.25);
+  opacity: calc(var(--sub-alpha, 0.25) * 0.35);
 }
 
 /* Particules de poussière d'étoiles CSS */
@@ -129,6 +132,13 @@
   opacity: var(--particle-alpha, 0.4);
   animation: floatDust 12s linear infinite;
   will-change: transform;
+  background: var(--orchid-300);
+  box-shadow: 0 0 6px var(--orchid-500);
+}
+
+.dust-particle.alt-particle {
+  background: var(--blue-300);
+  box-shadow: 0 0 6px var(--blue-500);
 }
 
 /* Keyframes de dérive 100% GPU */

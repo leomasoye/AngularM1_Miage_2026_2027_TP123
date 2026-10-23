@@ -4,8 +4,8 @@
   background: var(--bg-surface, #13131a);
   color: var(--text-primary, #f0f0f5);
   border-radius: var(--radius-md, 16px);
-  border: 1px solid rgba(155, 63, 212, 0.25);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7), 0 0 30px rgba(155, 63, 212, 0.2);
+  border: 1px solid var(--border-accent);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7), var(--shadow-orchid);
   min-width: 360px;
   max-width: 480px;
   width: 100%;
@@ -33,7 +33,7 @@
 }
 
 .title-icon {
-  color: var(--orchid-400, #b862ee);
+  color: var(--orchid-500);
 }
 
 .track-caption {
@@ -43,7 +43,7 @@
 }
 
 .track-caption strong {
-  color: var(--orchid-300, #c47aed);
+  color: var(--orchid-300);
 }
 
 .close-btn {
@@ -73,9 +73,9 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(155, 63, 212, 0.12);
-  border: 1px dashed rgba(155, 63, 212, 0.4);
-  color: var(--orchid-300, #c47aed);
+  background: rgba(var(--orchid-rgb, 155, 63, 212), 0.12);
+  border: 1px dashed rgba(var(--orchid-rgb, 155, 63, 212), 0.4);
+  color: var(--orchid-300);
   border-radius: var(--radius-sm, 8px);
   padding: 0.6rem 1rem;
   font-size: 0.875rem;
@@ -87,8 +87,8 @@
 }
 
 .btn-toggle-create:hover {
-  background: rgba(155, 63, 212, 0.22);
-  border-color: var(--orchid-500, #9b3fd4);
+  background: rgba(var(--orchid-rgb, 155, 63, 212), 0.22);
+  border-color: var(--orchid-500);
   transform: translateY(-1px);
 }
 
@@ -97,8 +97,8 @@
   flex-direction: column;
   gap: 0.75rem;
   padding: 1rem;
-  background: rgba(26, 26, 38, 0.6);
-  border: 1px solid rgba(155, 63, 212, 0.25);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm, 8px);
   animation: fadeIn 0.2s ease-out;
 }
@@ -111,7 +111,7 @@
 .input-playlist-name {
   width: 100%;
   box-sizing: border-box;
-  background: rgba(13, 13, 15, 0.8);
+  background: var(--bg-void);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 6px;
   padding: 0.6rem 0.8rem;
@@ -123,8 +123,8 @@
 }
 
 .input-playlist-name:focus {
-  border-color: var(--orchid-400, #b862ee);
-  box-shadow: 0 0 10px rgba(155, 63, 212, 0.3);
+  border-color: var(--orchid-500);
+  box-shadow: 0 0 10px rgba(var(--orchid-rgb, 155, 63, 212), 0.35);
 }
 
 .form-actions-row {
@@ -164,15 +164,15 @@
 }
 
 .vis-btn.active {
-  background: rgba(155, 63, 212, 0.25);
-  color: var(--orchid-200, #e2b9f9);
+  background: rgba(var(--orchid-rgb, 155, 63, 212), 0.25);
+  color: var(--orchid-100);
 }
 
 .btn-submit-create {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: linear-gradient(135deg, #9b3fd4 0%, #1a7fe8 100%);
+  background: var(--gradient-orchid-blue);
   color: #fff;
   border: none;
   padding: 0.5rem 1rem;
@@ -190,7 +190,7 @@
 
 .btn-submit-create:not(:disabled):hover {
   transform: scale(1.02);
-  box-shadow: 0 0 15px rgba(155, 63, 212, 0.4);
+  box-shadow: 0 0 15px rgba(var(--orchid-rgb, 155, 63, 212), 0.4);
 }
 
 /* Playlists List */
@@ -213,21 +213,21 @@
 }
 
 .playlist-item:hover {
-  background: rgba(155, 63, 212, 0.12);
-  border-color: rgba(155, 63, 212, 0.3);
+  background: rgba(var(--orchid-rgb, 155, 63, 212), 0.12);
+  border-color: rgba(var(--orchid-rgb, 155, 63, 212), 0.3);
   transform: translateX(3px);
 }
 
 .playlist-item.in-playlist {
-  background: rgba(155, 63, 212, 0.15);
-  border-color: rgba(155, 63, 212, 0.45);
+  background: rgba(var(--orchid-rgb, 155, 63, 212), 0.18);
+  border-color: var(--orchid-500);
 }
 
 .playlist-icon-wrap {
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background: linear-gradient(135deg, rgba(155, 63, 212, 0.2), rgba(26, 127, 232, 0.2));
+  background: linear-gradient(135deg, rgba(var(--orchid-rgb, 155, 63, 212), 0.25), rgba(var(--blue-rgb, 26, 127, 232), 0.25));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -267,7 +267,7 @@
   font-weight: 600;
   padding: 1px 6px;
   border-radius: 4px;
-  background: rgba(26, 127, 232, 0.15);
+  background: rgba(var(--blue-rgb), 0.15);
   color: var(--blue-300, #5aaaf5);
 }
 
@@ -300,11 +300,11 @@
 }
 
 .check-badge.checked mat-icon {
-  color: var(--orchid-400, #b862ee);
+  color: var(--orchid-500);
   font-size: 24px;
   width: 24px;
   height: 24px;
-  filter: drop-shadow(0 0 6px rgba(155, 63, 212, 0.6));
+  filter: drop-shadow(0 0 6px rgba(var(--orchid-rgb, 155, 63, 212), 0.6));
 }
 
 .check-badge.unchecked mat-icon {
@@ -316,7 +316,7 @@
 }
 
 .playlist-item:hover .check-badge.unchecked mat-icon {
-  color: var(--orchid-300, #c47aed);
+  color: var(--orchid-300);
 }
 
 /* Spinner and empty */

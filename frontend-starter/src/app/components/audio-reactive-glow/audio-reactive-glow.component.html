@@ -25,11 +25,11 @@
       @for (p of particles; track p.id) {
         <div
           class="dust-particle"
+          [class.alt-particle]="p.id % 2 === 1"
           [style.left.%]="p.x"
           [style.top.%]="p.y"
           [style.width.px]="p.size"
           [style.height.px]="p.size"
-          [style.background]="p.color"
           [style.animationDuration.s]="p.duration"
           [style.animationDelay.s]="p.delay"
         ></div>

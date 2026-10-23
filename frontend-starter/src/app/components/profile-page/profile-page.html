@@ -91,7 +91,10 @@
       }
     </div>
 
-    <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); text-align: center;">
+    <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <a routerLink="/settings" mat-stroked-button>
+        <mat-icon>settings</mat-icon> Paramètres & Thèmes
+      </a>
       <button mat-button color="warn" (click)="logout()">
         <mat-icon>logout</mat-icon> Se déconnecter
       </button>

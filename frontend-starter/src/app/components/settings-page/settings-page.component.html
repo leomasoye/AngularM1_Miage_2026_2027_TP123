@@ -1,0 +1,419 @@
+<div class="settings-container animate-in">
+  <!-- En-tête de la page -->
+  <header class="settings-header">
+    <div class="header-content">
+      <div class="header-titles">
+        <div class="badge-subtitle">
+          <span class="material-symbols-outlined icon-glow">tune</span>
+          Préférences & Personnalisation
+        </div>
+        <h1 class="text-display">Paramètres</h1>
+        <p class="text-body text-muted">
+          Configurez l’ambiance visuelle, les palettes chromatiques et vos réglages d'écoute personnalisés.
+        </p>
+      </div>
+
+      <div class="active-theme-summary glass-card">
+        <span class="text-label text-muted">Thème Actif</span>
+        <div class="summary-details">
+          <div
+            class="summary-color-orb"
+            [style.background]="themeService.currentTheme().gradient"
+          ></div>
+          <div>
+            <span class="summary-theme-name">{{ themeService.currentTheme().name }}</span>
+            <span class="summary-theme-subtitle">{{ themeService.currentTheme().subtitle }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Notification de réinitialisation -->
+  @if (resetNotice()) {
+    <div class="alert-notice glass-card animate-in">
+      <span class="material-symbols-outlined">check_circle</span>
+      <span>{{ resetNotice() }}</span>
+    </div>
+  }
+
+  <!-- SECTION 1 : THÈMES DE COULEURS -->
+  <section class="settings-section">
+    <div class="section-heading">
+      <div class="section-icon-wrap">
+        <span class="material-symbols-outlined">palette</span>
+      </div>
+      <div>
+        <h2 class="text-heading">Thèmes de Couleurs & Ambiance</h2>
+        <p class="text-body text-muted">
+          Choisissez l’ambiance chromatique qui vous inspire. Les changements s'appliquent immédiatement et sont conservés entre vos sessions.
+        </p>
+      </div>
+    </div>
+
+    <div class="themes-grid">
+      @for (theme of themeService.themes; track theme.id) {
+        <div
+          class="theme-card glass-card"
+          [class.active]="themeService.currentThemeId() === theme.id"
+          (click)="selectTheme(theme.id)"
+          role="button"
+          tabindex="0"
+          (keydown.enter)="selectTheme(theme.id)"
+          (keydown.space)="selectTheme(theme.id)"
+        >
+          <!-- Bannière dégradée du thème -->
+          <div
+            class="theme-banner"
+            [style.background]="theme.gradient"
+          >
+            <div class="theme-banner-overlay"></div>
+            <span class="material-symbols-outlined theme-banner-icon">{{ theme.icon }}</span>
+
+            @if (themeService.currentThemeId() === theme.id) {
+              <div class="active-badge">
+                <span class="material-symbols-outlined check-icon">check</span>
+                Actif
+              </div>
+            }
+          </div>
+
+          <!-- Contenu de la carte de thème -->
+          <div class="theme-card-body">
+            <div class="theme-info-header">
+              <h3 class="theme-name">{{ theme.name }}</h3>
+              <span class="theme-subtitle">{{ theme.subtitle }}</span>
+            </div>
+
+            <!-- Échantillons de couleurs (Palette) -->
+            <div class="palette-swatches" aria-label="Palette de couleurs">
+              <div
+                class="swatch"
+                [style.background]="theme.voidColor"
+                title="Fond ultra-sombre"
+              ></div>
+              <div
+                class="swatch"
+                [style.background]="theme.surfaceColor"
+                title="Surface carte"
+              ></div>
+              <div
+                class="swatch"
+                [style.background]="theme.primaryColor"
+                title="Accent primaire"
+              ></div>
+              <div
+                class="swatch"
+                [style.background]="theme.secondaryColor"
+                title="Accent secondaire"
+              ></div>
+            </div>
+
+            <p class="theme-description">{{ theme.description }}</p>
+
+            <!-- Tags -->
+            <div class="theme-tags">
+              @for (tag of theme.tags; track tag) {
+                <span class="tag-chip">{{ tag }}</span>
+              }
+            </div>
+
+            <!-- Bouton d'action -->
+            <div class="theme-action">
+              <button
+                type="button"
+                class="theme-select-btn"
+                [class.btn-selected]="themeService.currentThemeId() === theme.id"
+                (click)="$event.stopPropagation(); selectTheme(theme.id)"
+              >
+                @if (themeService.currentThemeId() === theme.id) {
+                  <span class="material-symbols-outlined">done_all</span>
+                  Thème sélectionné
+                } @else {
+                  <span class="material-symbols-outlined">style</span>
+                  Appliquer ce thème
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- SECTION 2 : AMBIANCE & EFFETS VISUELS -->
+  <section class="settings-section">
+    <div class="section-heading">
+      <div class="section-icon-wrap">
+        <span class="material-symbols-outlined">auto_awesome</span>
+      </div>
+      <div>
+        <h2 class="text-heading">Éclairage & Arrière-plan Audio-Réactif</h2>
+        <p class="text-body text-muted">
+          Contrôlez les effets visuels de lueur réactive alimentés par l'Analyseur Web Audio API en arrière-plan.
+        </p>
+      </div>
+    </div>
+
+    <div class="options-grid">
+      <!-- Option : Arrière-plan audio réactif -->
+      <div class="setting-item-card glass-card">
+        <div class="setting-item-main">
+          <div class="setting-icon">
+            <span class="material-symbols-outlined">blur_on</span>
+          </div>
+          <div class="setting-info">
+            <h3 class="setting-title">Arrière-plan audio-réactif</h3>
+            <p class="setting-description">
+              Génère des orbes lumineux dynamiques flottants qui pulsent en temps réel au rythme des basses et médiums de la musique en lecture.
+            </p>
+          </div>
+          <div class="setting-control">
+            <label class="toggle-switch">
+              <input
+                type="checkbox"
+                [checked]="glow.isEnabled()"
+                (change)="toggleGlow()"
+              />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Option : Intensité des lueurs -->
+      <div class="setting-item-card glass-card" [class.disabled-card]="!glow.isEnabled()">
+        <div class="setting-item-main">
+          <div class="setting-icon">
+            <span class="material-symbols-outlined">flare</span>
+          </div>
+          <div class="setting-info" style="flex: 1;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h3 class="setting-title">Intensité des lueurs</h3>
+              <span class="setting-value-badge">{{ (glow.intensity() * 100) | number: '1.0-0' }}%</span>
+            </div>
+            <p class="setting-description">
+              Ajustez l’amplitude de réactivité des néons d’ambiance à la musique.
+            </p>
+            <div class="slider-wrapper">
+              <span class="range-bound">Douce</span>
+              <input
+                type="range"
+                min="0.2"
+                max="2.0"
+                step="0.05"
+                [value]="glow.intensity()"
+                [disabled]="!glow.isEnabled()"
+                (input)="onIntensityChange($event)"
+                class="custom-range"
+              />
+              <span class="range-bound">Vibrante</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Option : Poussières d'étoiles CSS -->
+      <div class="setting-item-card glass-card" [class.disabled-card]="!glow.isEnabled()">
+        <div class="setting-item-main">
+          <div class="setting-icon">
+            <span class="material-symbols-outlined">sparkles</span>
+          </div>
+          <div class="setting-info">
+            <h3 class="setting-title">Particules de poussières d’étoiles</h3>
+            <p class="setting-description">
+              Affiche des micros-particules lumineuses douces synchronisées avec la palette de couleurs de votre thème.
+            </p>
+          </div>
+          <div class="setting-control">
+            <label class="toggle-switch">
+              <input
+                type="checkbox"
+                [checked]="glow.particlesEnabled()"
+                [disabled]="!glow.isEnabled()"
+                (change)="toggleParticles()"
+              />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Option : Transitions natives fluides -->
+      <div class="setting-item-card glass-card">
+        <div class="setting-item-main">
+          <div class="setting-icon">
+            <span class="material-symbols-outlined">animation</span>
+          </div>
+          <div class="setting-info">
+            <h3 class="setting-title">Transitions de vues ultra-fluides</h3>
+            <p class="setting-description">
+              Tire parti de l'API native View Transitions pour un fondu cinématique parfait lors de la navigation et du changement de thème.
+            </p>
+          </div>
+          <div class="setting-control">
+            <span class="status-pill-active">
+              <span class="status-dot"></span>
+              Activé
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3 : PRÉFÉRENCES DE LECTURE & AUDIO -->
+  <section class="settings-section">
+    <div class="section-heading">
+      <div class="section-icon-wrap">
+        <span class="material-symbols-outlined">headphones</span>
+      </div>
+      <div>
+        <h2 class="text-heading">Lecture & Audio</h2>
+        <p class="text-body text-muted">
+          Ajustez vos préférences par défaut pour une expérience d’écoute optimale.
+        </p>
+      </div>
+    </div>
+
+    <div class="options-grid">
+      <!-- Volume par défaut -->
+      <div class="setting-item-card glass-card">
+        <div class="setting-item-main">
+          <div class="setting-icon">
+            <span class="material-symbols-outlined">volume_up</span>
+          </div>
+          <div class="setting-info" style="flex: 1;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h3 class="setting-title">Volume de départ</h3>
+              <span class="setting-value-badge">{{ (themeService.defaultVolume() * 100) | number: '1.0-0' }}%</span>
+            </div>
+            <p class="setting-description">
+              Niveau sonore appliqué automatiquement lors du chargement de l'application.
+            </p>
+            <div class="slider-wrapper">
+              <span class="range-bound">0%</span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                [value]="themeService.defaultVolume() * 100"
+                (input)="onDefaultVolumeChange($event)"
+                class="custom-range"
+              />
+              <span class="range-bound">100%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Auto-Play suivant -->
+      <div class="setting-item-card glass-card">
+        <div class="setting-item-main">
+          <div class="setting-icon">
+            <span class="material-symbols-outlined">skip_next</span>
+          </div>
+          <div class="setting-info">
+            <h3 class="setting-title">Enchaînement automatique (Auto-play)</h3>
+            <p class="setting-description">
+              Passe automatiquement au morceau suivant de la liste de lecture ou de la file d'attente à la fin d'une piste.
+            </p>
+          </div>
+          <div class="setting-control">
+            <label class="toggle-switch">
+              <input
+                type="checkbox"
+                [checked]="themeService.autoPlayNext()"
+                (change)="toggleAutoPlayNext()"
+              />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Raccourcis clavier -->
+      <div class="setting-item-card glass-card">
+        <div class="setting-item-main">
+          <div class="setting-icon">
+            <span class="material-symbols-outlined">keyboard</span>
+          </div>
+          <div class="setting-info">
+            <h3 class="setting-title">Raccourcis clavier multimédia</h3>
+            <p class="setting-description">
+              Contrôlez le lecteur avec votre clavier : <kbd>Espace</kbd> (Lecture/Pause), <kbd>M</kbd> (Muet), <kbd>→</kbd> / <kbd>←</kbd> (Piste suivante / précédente).
+            </p>
+          </div>
+          <div class="setting-control">
+            <label class="toggle-switch">
+              <input
+                type="checkbox"
+                [checked]="themeService.enableKeyboardShortcuts()"
+                (change)="toggleKeyboardShortcuts()"
+              />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visibilité par défaut lors de l'upload -->
+      <div class="setting-item-card glass-card">
+        <div class="setting-item-main">
+          <div class="setting-icon">
+            <span class="material-symbols-outlined">lock_open</span>
+          </div>
+          <div class="setting-info">
+            <h3 class="setting-title">Visibilité par défaut des morceaux ajoutés</h3>
+            <p class="setting-description">
+              Choisissez si vos nouveaux fichiers audio importés doivent être visibles publiquement ou restreints par défaut.
+            </p>
+            <div class="segment-selector" style="margin-top: 1rem;">
+              <button
+                type="button"
+                class="segment-btn"
+                [class.active]="themeService.defaultTrackVisibility() === 'public'"
+                (click)="setDefaultVisibility('public')"
+              >
+                <span class="material-symbols-outlined">public</span>
+                Public
+              </button>
+              <button
+                type="button"
+                class="segment-btn"
+                [class.active]="themeService.defaultTrackVisibility() === 'private'"
+                (click)="setDefaultVisibility('private')"
+              >
+                <span class="material-symbols-outlined">lock</span>
+                Privé (Amis)
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4 : GESTION DES PRÉFÉRENCES & RÉINITIALISATION -->
+  <section class="settings-section">
+    <div class="danger-zone glass-card">
+      <div class="danger-info">
+        <div class="danger-icon">
+          <span class="material-symbols-outlined">restore</span>
+        </div>
+        <div>
+          <h3 class="danger-title">Réinitialiser les préférences</h3>
+          <p class="danger-description">
+            Rétablir les options graphiques, le thème "From Zero" original et tous les réglages audio aux valeurs d’usine.
+          </p>
+        </div>
+      </div>
+
+      <button type="button" class="btn-danger-reset" (click)="resetAll()">
+        <span class="material-symbols-outlined">restart_alt</span>
+        Rétablir les valeurs par défaut
+      </button>
+    </div>
+  </section>
+</div>

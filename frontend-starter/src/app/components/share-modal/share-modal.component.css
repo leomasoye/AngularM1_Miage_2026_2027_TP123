@@ -22,7 +22,7 @@
   width: 44px;
   height: 44px;
   border-radius: var(--radius-sm);
-  background: rgba(155, 63, 212, 0.15);
+  background: rgba(var(--orchid-rgb), 0.15);
   color: var(--orchid-300);
   display: flex;
   align-items: center;
@@ -123,7 +123,7 @@
   justify-content: center;
   font-weight: 700;
   font-size: 0.875rem;
-  box-shadow: 0 0 12px rgba(155, 63, 212, 0.3);
+  box-shadow: 0 0 12px rgba(var(--orchid-rgb), 0.3);
 }
 
 .friend-name {
@@ -133,9 +133,9 @@
 }
 
 .btn-share {
-  background: rgba(155, 63, 212, 0.2) !important;
+  background: rgba(var(--orchid-rgb), 0.2) !important;
   color: var(--orchid-300) !important;
-  border: 1px solid rgba(155, 63, 212, 0.4) !important;
+  border: 1px solid rgba(var(--orchid-rgb), 0.4) !important;
   border-radius: var(--radius-pill) !important;
   font-size: 0.85rem !important;
   display: flex;
@@ -144,13 +144,13 @@
 }
 
 .btn-share:hover {
-  background: rgba(155, 63, 212, 0.35) !important;
+  background: rgba(var(--orchid-rgb), 0.35) !important;
 }
 
 .btn-shared {
-  background: rgba(26, 127, 232, 0.2) !important;
+  background: rgba(var(--blue-rgb), 0.2) !important;
   color: var(--blue-300) !important;
-  border: 1px solid rgba(26, 127, 232, 0.5) !important;
+  border: 1px solid rgba(var(--blue-rgb), 0.5) !important;
   border-radius: var(--radius-pill) !important;
   font-size: 0.85rem !important;
   display: flex;

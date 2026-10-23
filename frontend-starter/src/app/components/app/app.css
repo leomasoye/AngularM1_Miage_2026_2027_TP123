@@ -63,7 +63,7 @@
 }
 
 .nav-item.active, .nav-item:hover {
-  background: rgba(155, 63, 212, 0.1);
+  background: rgba(var(--orchid-rgb), 0.12);
   color: var(--text-primary);
 }
 
@@ -113,11 +113,11 @@
   border-radius: var(--radius-pill);
   min-width: 1.25rem;
   text-align: center;
-  box-shadow: 0 0 8px rgba(155, 63, 212, 0.5);
+  box-shadow: 0 0 8px rgba(var(--orchid-rgb), 0.5);
   animation: badgePulse 2.5s infinite;
 }
 
 @keyframes badgePulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(155, 63, 212, 0.5); }
-  50% { box-shadow: 0 0 0 6px rgba(155, 63, 212, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--orchid-rgb), 0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(var(--orchid-rgb), 0); }
 }

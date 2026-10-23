@@ -10,14 +10,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--fz-bg-card, #17171d);
-  box-shadow: 0 0 10px rgba(155, 63, 212, 0.25), inset 0 0 0 1.5px rgba(255, 255, 255, 0.12);
+  background: var(--bg-surface, #13131a);
+  box-shadow: 0 0 12px rgba(var(--orchid-rgb, 155, 63, 212), 0.3), inset 0 0 0 1.5px rgba(255, 255, 255, 0.15);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   user-select: none;
 }
 
 .avatar-container:hover {
-  box-shadow: 0 0 16px rgba(155, 63, 212, 0.45), inset 0 0 0 1.5px rgba(155, 63, 212, 0.5);
+  box-shadow: 0 0 18px rgba(var(--orchid-rgb, 155, 63, 212), 0.5), inset 0 0 0 1.5px var(--orchid-500);
 }
 
 .avatar-img {
@@ -36,7 +36,7 @@
   font-weight: 700;
   color: #ffffff;
   letter-spacing: 0.04em;
-  background: linear-gradient(135deg, #9b3fd4 0%, #1a7fe8 100%);
+  background: var(--gradient-orchid-blue);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
@@ -57,12 +57,12 @@
   width: 84px;
   height: 84px;
   font-size: 1.8rem;
-  box-shadow: 0 0 20px rgba(155, 63, 212, 0.35), inset 0 0 0 2px rgba(255, 255, 255, 0.18);
+  box-shadow: 0 0 20px rgba(var(--orchid-rgb, 155, 63, 212), 0.4), inset 0 0 0 2px rgba(255, 255, 255, 0.2);
 }
 
 .size-xl {
   width: 120px;
   height: 120px;
   font-size: 2.6rem;
-  box-shadow: 0 0 28px rgba(155, 63, 212, 0.45), inset 0 0 0 2.5px rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 28px rgba(var(--orchid-rgb, 155, 63, 212), 0.5), inset 0 0 0 2.5px rgba(255, 255, 255, 0.25);
 }

@@ -55,7 +55,7 @@
 .search-input:focus {
   border-color: var(--orchid-500);
   background: var(--bg-elevated);
-  box-shadow: 0 0 15px rgba(155, 63, 212, 0.25);
+  box-shadow: 0 0 15px rgba(var(--orchid-rgb), 0.25);
 }
 
 .btn-clear {
@@ -95,9 +95,9 @@
   font-weight: 600;
   padding: 0.25rem 0.75rem;
   border-radius: var(--radius-pill);
-  background: rgba(155, 63, 212, 0.15);
+  background: rgba(var(--orchid-rgb), 0.15);
   color: var(--orchid-300);
-  border: 1px solid rgba(155, 63, 212, 0.3);
+  border: 1px solid rgba(var(--orchid-rgb), 0.3);
   margin-top: 1rem;
 }
 
@@ -161,7 +161,7 @@
 
 .track-row:hover, .user-row:hover {
   background: var(--bg-elevated);
-  border-color: rgba(155, 63, 212, 0.3);
+  border-color: rgba(var(--orchid-rgb), 0.3);
   transform: translateY(-1px);
 }
 

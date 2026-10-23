@@ -32,6 +32,10 @@
             <span class="pending-badge">{{ pendingCount() }}</span>
           }
         </a>
+        <a routerLink="/settings" routerLinkActive="active" class="nav-item">
+          <span class="material-symbols-outlined">settings</span>
+          Paramètres
+        </a>
         <a routerLink="/profile" routerLinkActive="active" class="nav-item">
           @if (auth.currentUser(); as user) {
             <app-avatar [user]="user" size="sm"></app-avatar>

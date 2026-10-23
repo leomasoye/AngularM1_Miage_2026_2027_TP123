@@ -4,6 +4,7 @@ import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { EQPreset, PlayerService, SpatialPreset } from '../../shared/services/player.service';
+import { ThemeService } from '../../shared/services/theme.service';
 
 @Component({
   selector: 'app-equalizer',
@@ -15,6 +16,7 @@ import { EQPreset, PlayerService, SpatialPreset } from '../../shared/services/pl
 })
 export class EqualizerComponent implements OnInit, OnDestroy {
   readonly player = inject(PlayerService);
+  readonly themeService = inject(ThemeService);
   readonly dialogRef = inject(MatDialogRef<EqualizerComponent>, { optional: true });
   private readonly ngZone = inject(NgZone);
 
@@ -148,8 +150,10 @@ export class EqualizerComponent implements OnInit, OnDestroy {
     const height = canvas.height;
     ctx.clearRect(0, 0, width, height);
 
+    const currentTheme = this.themeService.currentTheme();
+
     if (!this.player.isPlaying()) {
-      ctx.strokeStyle = 'rgba(155, 63, 212, 0.3)';
+      ctx.strokeStyle = currentTheme.primaryColor + '4d'; // ~30% alpha
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(0, height / 2);
@@ -162,14 +166,14 @@ export class EqualizerComponent implements OnInit, OnDestroy {
     if (!timeData || timeData.length === 0) return;
 
     const grad = ctx.createLinearGradient(0, 0, width, 0);
-    grad.addColorStop(0, '#9b3fd4');
-    grad.addColorStop(0.5, '#1a7fe8');
-    grad.addColorStop(1, '#9b3fd4');
+    grad.addColorStop(0, currentTheme.primaryColor);
+    grad.addColorStop(0.5, currentTheme.secondaryColor);
+    grad.addColorStop(1, currentTheme.primaryColor);
 
     ctx.strokeStyle = grad;
     ctx.lineWidth = 2.5;
     ctx.shadowBlur = 8;
-    ctx.shadowColor = '#9b3fd4';
+    ctx.shadowColor = currentTheme.primaryColor;
     ctx.beginPath();
 
     const sliceWidth = width / timeData.length;

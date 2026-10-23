@@ -14,6 +14,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PlayerService } from '../../shared/services/player.service';
+import { ThemeService } from '../../shared/services/theme.service';
 
 @Component({
   selector: 'app-waveform',
@@ -25,6 +26,7 @@ import { PlayerService } from '../../shared/services/player.service';
 })
 export class WaveformComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly player = inject(PlayerService);
+  readonly themeService = inject(ThemeService);
   private readonly ngZone = inject(NgZone);
 
   readonly canvasRef = viewChild<ElementRef<HTMLCanvasElement>>('waveformCanvas');
@@ -43,6 +45,7 @@ export class WaveformComponent implements OnInit, AfterViewInit, OnDestroy {
   private visibilityHandler?: () => void;
   private cachedPlayedGradient: CanvasGradient | null = null;
   private cachedGradientHeight = 0;
+  private cachedThemeId: string | null = null;
 
   constructor() {
     effect(() => {
@@ -56,6 +59,13 @@ export class WaveformComponent implements OnInit, AfterViewInit, OnDestroy {
         this.stopRenderLoop();
         this.drawWaveform();
       }
+    });
+
+    effect(() => {
+      this.themeService.currentThemeId();
+      this.cachedPlayedGradient = null;
+      this.cachedThemeId = null;
+      this.drawWaveform();
     });
   }
 
@@ -185,17 +195,20 @@ export class WaveformComponent implements OnInit, AfterViewInit, OnDestroy {
     const barWidth = Math.max(1.5, (width - totalGaps) / totalBars);
     const centerY = height / 2;
 
-    // Cache du dégradé vertical From Zero pour éviter des milliers d'allocations par seconde
-    if (!this.cachedPlayedGradient || this.cachedGradientHeight !== height) {
+    const currentTheme = this.themeService.currentTheme();
+
+    // Cache du dégradé vertical dynamique selon le thème
+    if (!this.cachedPlayedGradient || this.cachedGradientHeight !== height || this.cachedThemeId !== currentTheme.id) {
       this.cachedGradientHeight = height;
+      this.cachedThemeId = currentTheme.id;
       this.cachedPlayedGradient = ctx.createLinearGradient(0, 0, 0, height);
-      this.cachedPlayedGradient.addColorStop(0, '#d89af8');
-      this.cachedPlayedGradient.addColorStop(0.4, '#9b3fd4');
-      this.cachedPlayedGradient.addColorStop(1, '#1a7fe8');
+      this.cachedPlayedGradient.addColorStop(0, currentTheme.secondaryColor);
+      this.cachedPlayedGradient.addColorStop(0.4, currentTheme.primaryColor);
+      this.cachedPlayedGradient.addColorStop(1, currentTheme.secondaryColor);
     }
 
-    const COLOR_UNPLAYED = 'rgba(155, 63, 212, 0.22)';
-    const COLOR_HOVERED = 'rgba(155, 63, 212, 0.55)';
+    const COLOR_UNPLAYED = `${currentTheme.primaryColor}38`;
+    const COLOR_HOVERED = `${currentTheme.primaryColor}8c`;
 
     for (let i = 0; i < totalBars; i++) {
       const x = i * (barWidth + gap);

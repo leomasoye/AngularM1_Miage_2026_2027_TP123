@@ -9,6 +9,7 @@ import { catchError, filter, switchMap } from 'rxjs/operators';
 import { PlayerBarComponent } from '../player-bar/player-bar.component';
 import { AvatarComponent } from '../../shared/components/avatar/avatar.component';
 import { AudioReactiveGlowComponent } from '../audio-reactive-glow/audio-reactive-glow.component';
+import { ThemeService } from '../../shared/services/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -29,6 +30,7 @@ export class AppComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly friendsService = inject(FriendsService);
   private readonly destroyRef = inject(DestroyRef);
+  readonly themeService = inject(ThemeService);
 
   readonly pendingCount = signal(0);
 

@@ -2,7 +2,7 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SlicePipe } from '@angular/common';
 import { AuthService } from '../../shared/services/auth.service';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -14,6 +14,7 @@ import { AvatarComponent } from '../../shared/components/avatar/avatar.component
   imports: [
     ReactiveFormsModule,
     SlicePipe,
+    RouterLink,
     MatButtonModule,
     MatProgressSpinnerModule,
     MatFormFieldModule,

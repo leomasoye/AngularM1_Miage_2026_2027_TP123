@@ -31,5 +31,13 @@ export const routes: Routes = [
       ),
     canActivate: [authGuard],
   },
+  {
+    path: 'settings',
+    loadComponent: () =>
+      import('./components/settings-page/settings-page.component').then(
+        (m) => m.SettingsPageComponent
+      ),
+    canActivate: [authGuard],
+  },
   { path: '**', redirectTo: 'tracks' },
 ];

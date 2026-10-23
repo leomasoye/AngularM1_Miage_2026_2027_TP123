@@ -224,6 +224,7 @@
             min="0"
             max="100"
             [value]="player.volume() * 100"
+            [style.--vol-fill.%]="player.volume() * 100"
             (input)="onVolumeChange($event)"
           />
         </div>

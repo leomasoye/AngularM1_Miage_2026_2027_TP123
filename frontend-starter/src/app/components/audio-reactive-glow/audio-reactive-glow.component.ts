@@ -13,6 +13,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { PlayerService } from '../../shared/services/player.service';
 import { GlowService } from '../../shared/services/glow.service';
+import { ThemeService } from '../../shared/services/theme.service';
 
 interface DustParticle {
   id: number;
@@ -35,6 +36,7 @@ interface DustParticle {
 export class AudioReactiveGlowComponent implements OnInit, OnDestroy {
   readonly player = inject(PlayerService);
   readonly glow = inject(GlowService);
+  readonly themeService = inject(ThemeService);
   private readonly ngZone = inject(NgZone);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -68,6 +70,11 @@ export class AudioReactiveGlowComponent implements OnInit, OnDestroy {
       }
     });
 
+    effect(() => {
+      this.themeService.currentThemeId();
+      this.initParticles();
+    });
+
     this.destroyRef.onDestroy(() => {
       this.isDestroyed = true;
       this.stopLoop();
@@ -75,7 +82,13 @@ export class AudioReactiveGlowComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    const colors = ['#d89af8', '#9b3fd4', '#5aaaf5', '#1a7fe8'];
+    this.initParticles();
+    this.setupListeners();
+  }
+
+  private initParticles(): void {
+    const theme = this.themeService.currentTheme();
+    const colors = [theme.primaryColor, theme.secondaryColor];
     this.particles = Array.from({ length: 16 }, (_, i) => ({
       id: i,
       x: Math.round(Math.random() * 92) + 4,
@@ -85,8 +98,6 @@ export class AudioReactiveGlowComponent implements OnInit, OnDestroy {
       duration: Math.round(10 + Math.random() * 10),
       delay: -Math.round(Math.random() * 12),
     }));
-
-    this.setupListeners();
   }
 
   ngOnDestroy(): void {

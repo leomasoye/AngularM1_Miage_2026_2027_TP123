@@ -17,6 +17,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { PlayerService } from '../../shared/services/player.service';
 import { GlowService } from '../../shared/services/glow.service';
+import { ThemeService } from '../../shared/services/theme.service';
 import { Track } from '../../shared/models/track.model';
 import { LikeButtonComponent } from '../like-button/like-button';
 import { EqualizerComponent } from '../equalizer/equalizer.component';
@@ -41,6 +42,7 @@ import { WaveformComponent } from '../waveform/waveform.component';
 export class PlayerBarComponent implements OnInit, OnDestroy {
   readonly player = inject(PlayerService);
   readonly glowService = inject(GlowService);
+  readonly themeService = inject(ThemeService);
   private readonly dialog = inject(MatDialog);
   private readonly ngZone = inject(NgZone);
 
@@ -54,6 +56,7 @@ export class PlayerBarComponent implements OnInit, OnDestroy {
   private cachedLeftGrad?: CanvasGradient;
   private cachedRightGrad?: CanvasGradient;
   private cachedGradHeight = 0;
+  private cachedThemeId: string | null = null;
 
   constructor() {
     effect(() => {
@@ -63,6 +66,12 @@ export class PlayerBarComponent implements OnInit, OnDestroy {
         this.stopVisualizer();
         this.drawVisualizer();
       }
+    });
+
+    effect(() => {
+      this.themeService.currentThemeId();
+      this.cachedThemeId = null;
+      this.drawVisualizer();
     });
   }
 
@@ -184,28 +193,31 @@ export class PlayerBarComponent implements OnInit, OnDestroy {
 
     ctx.clearRect(0, 0, width, height);
 
+    const currentTheme = this.themeService.currentTheme();
+
     if (!this.player.isPlaying()) {
-      ctx.fillStyle = 'rgba(155, 63, 212, 0.2)';
+      ctx.fillStyle = currentTheme.primaryColor + '33';
       ctx.fillRect(0, height / 2 - 1, width, 2);
       return;
     }
 
-    // Mise en cache des 3 dégradés (FFT, VU-G, VU-D) dès que la hauteur change
-    if (!this.cachedFftGrad || this.cachedGradHeight !== height) {
+    // Mise en cache des 3 dégradés (FFT, VU-G, VU-D) dès que la hauteur ou le thème change
+    if (!this.cachedFftGrad || this.cachedGradHeight !== height || this.cachedThemeId !== currentTheme.id) {
       this.cachedGradHeight = height;
+      this.cachedThemeId = currentTheme.id;
 
       this.cachedFftGrad = ctx.createLinearGradient(0, height, 0, 0);
-      this.cachedFftGrad.addColorStop(0, '#1a7fe8');
-      this.cachedFftGrad.addColorStop(1, '#9b3fd4');
+      this.cachedFftGrad.addColorStop(0, currentTheme.secondaryColor);
+      this.cachedFftGrad.addColorStop(1, currentTheme.primaryColor);
 
       this.cachedLeftGrad = ctx.createLinearGradient(0, height, 0, 0);
       this.cachedLeftGrad.addColorStop(0, '#00e676');
-      this.cachedLeftGrad.addColorStop(0.7, '#9b3fd4');
+      this.cachedLeftGrad.addColorStop(0.7, currentTheme.primaryColor);
       this.cachedLeftGrad.addColorStop(1, '#ff1744');
 
       this.cachedRightGrad = ctx.createLinearGradient(0, height, 0, 0);
       this.cachedRightGrad.addColorStop(0, '#00e676');
-      this.cachedRightGrad.addColorStop(0.7, '#1a7fe8');
+      this.cachedRightGrad.addColorStop(0.7, currentTheme.secondaryColor);
       this.cachedRightGrad.addColorStop(1, '#ff1744');
     }
 
@@ -228,7 +240,7 @@ export class PlayerBarComponent implements OnInit, OnDestroy {
     }
 
     // Séparateur vertical subtil
-    ctx.fillStyle = 'rgba(155, 63, 212, 0.25)';
+    ctx.fillStyle = currentTheme.primaryColor + '40';
     ctx.fillRect(104, 2, 1, height - 4);
 
     // 2. VU-mètres Stéréo distincts Gauche (L) & Droite (R) (112px à 136px)
